@@ -1,0 +1,35 @@
+# ── Environment & secrets ──
+.env
+.env.*
+!.env.example
+src/.env
+src/.env.*
+!src/.env.example
+
+# ── Dependencies (rebuilt via composer/npm) ──
+src/vendor/
+src/node_modules/
+
+# ── Build output ──
+src/public/build/
+src/public/hot
+
+# ── Laravel runtime ──
+src/storage/*.key
+src/storage/app/**
+!src/storage/app/.gitignore
+src/storage/framework/cache/**
+src/storage/framework/sessions/**
+src/storage/framework/views/**
+src/storage/logs/**
+src/bootstrap/cache/*.php
+
+# ── Docker local override ──
+compose.override.yaml
+
+# ── OS / editor noise ──
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

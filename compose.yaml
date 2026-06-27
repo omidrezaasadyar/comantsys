@@ -1,0 +1,50 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: comantsys-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html
+    networks:
+      - internal
+    depends_on:
+      - db
+
+  web:
+    image: nginx:1.27-alpine
+    container_name: comantsys-web
+    restart: unless-stopped
+    # Bind ONLY to the Tailscale IP — not reachable from the public internet
+    ports:
+      - "127.0.0.1:8095:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - internal
+    depends_on:
+      - app
+
+  db:
+    image: postgres:17-alpine
+    container_name: comantsys-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - comantsys-db-data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+  
+
+volumes:
+  comantsys-db-data:

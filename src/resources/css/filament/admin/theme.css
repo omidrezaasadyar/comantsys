@@ -1,0 +1,54 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+@source '../../../../vendor/bezhansalleh/filament-language-switch/**';
+
+/* ---- Vazirmatn font (served locally from /public/fonts) ---- */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ---- Apply Vazirmatn across the whole panel ---- */
+:root {
+    --font-family: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
+}
+.fi-body,
+.fi-sidebar,
+.fi-main {
+    font-family: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---- Dark professional sidebar (both light & dark mode) ---- */
+.fi-sidebar,
+.fi-sidebar-nav,
+.fi-sidebar-header {
+    background-color: #0C2A43 !important;
+}
+
+/* Sidebar text + icons readable on dark background */
+.fi-sidebar .fi-sidebar-item-label {
+    color: #A9C7DE !important;
+}
+.fi-sidebar .fi-sidebar-item.fi-active .fi-sidebar-item-label,
+.fi-sidebar .fi-sidebar-item:hover .fi-sidebar-item-label {
+    color: #ffffff !important;
+}
