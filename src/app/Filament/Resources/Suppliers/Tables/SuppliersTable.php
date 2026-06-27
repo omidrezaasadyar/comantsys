@@ -22,6 +22,12 @@ class SuppliersTable
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
+                TextColumn::make('parts.part_name')
+                    ->label('قطعات')
+                    ->badge()
+                    ->separator(',')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('country')
                     ->label('کشور')
                     ->searchable()
