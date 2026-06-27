@@ -33,3 +33,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
+
+# ساخت کاربر هم‌UID با میزبان تا فایل‌های ساخته‌شده مال کاربر میزبان باشند
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g ${GID} appuser \
+    && useradd -u ${UID} -g ${GID} -m -s /bin/bash appuser
+USER appuser

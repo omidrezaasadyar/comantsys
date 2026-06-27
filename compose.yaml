@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        UID: 1000
+        GID: 1000
     container_name: comantsys-app
     restart: unless-stopped
     working_dir: /var/www/html
