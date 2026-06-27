@@ -1,54 +1,78 @@
 @import '../../../../vendor/filament/filament/resources/css/theme.css';
-
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
-@source '../../../../vendor/bezhansalleh/filament-language-switch/**';
 
-/* ---- Vazirmatn font (served locally from /public/fonts) ---- */
-@font-face {
-    font-family: 'Vazirmatn';
-    src: url('/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Vazirmatn';
-    src: url('/fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Vazirmatn';
-    src: url('/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
+/* ============================================================
+   COMANTSYS — سطوح رنگی برای هر دو تم.
+   هر تم سه عمق دارد: صفحه (بوم) / قاب (سایدبار+نوار) / کارت.
+   برای تغییر، فقط کدهای رنگ هر بخش را عوض کن.
+   ============================================================ */
 
-/* ---- Apply Vazirmatn across the whole panel ---- */
-:root {
-    --font-family: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
-}
+/* ===== تم روشن (پایه) ===== */
+
+/* صفحه — خاکستریِ روشن تا کارت سفید رویش جدا دیده شود */
 .fi-body,
-.fi-sidebar,
-.fi-main {
-    font-family: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
+.fi-main,
+.fi-layout {
+    background-color: #edeef0 !important;
 }
 
-/* ---- Dark professional sidebar (both light & dark mode) ---- */
+/* سایدبار و نوار بالا — سفید */
 .fi-sidebar,
-.fi-sidebar-nav,
-.fi-sidebar-header {
-    background-color: #0C2A43 !important;
+.fi-topbar {
+    background-color: #ffffff !important;
 }
 
-/* Sidebar text + icons readable on dark background */
-.fi-sidebar .fi-sidebar-item-label {
-    color: #A9C7DE !important;
+/* رنگ فقط روی ظرفِ بیرونیِ گردگوشه */
+.fi-section {
+    background-color: #ffffff !important;
 }
-.fi-sidebar .fi-sidebar-item.fi-active .fi-sidebar-item-label,
-.fi-sidebar .fi-sidebar-item:hover .fi-sidebar-item-label {
-    color: #ffffff !important;
+/* لایهٔ داخلی شفاف، تا گوشهٔ تیز روی کارت نیفتد */
+.fi-section-content-ctn {
+    background-color: transparent !important;
+}
+
+/* ===== تم تیره (override) ===== */
+
+.dark .fi-body,
+.dark .fi-main,
+.dark .fi-layout {
+    background-color: #1e1e22 !important;
+}
+
+.dark .fi-sidebar,
+.dark .fi-topbar {
+    background-color: #18181c !important;
+}
+
+.dark .fi-section {
+    background-color: #28282d !important;
+}
+.dark .fi-section-content-ctn {
+    background-color: transparent !important;
+}
+/* ============================================================
+   صفحهٔ لاگین — تصویر تمام‌صفحه + کارت شناور
+   ============================================================ */
+
+/* تصویر صنعتی روی کلِ صفحه */
+.fi-simple-layout,
+.fi-simple-main-ctn {
+    min-height: 100vh;
+    background-image:
+        linear-gradient(135deg, rgba(8, 47, 73, 0.85), rgba(12, 74, 110, 0.75)),
+        url('/images/login-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* کارت فرم — شناور، با شیشه‌ای‌شدنِ ملایم و سایه */
+.fi-simple-main {
+    background-color: rgba(24, 24, 28, 0.92) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.25rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    padding: 2.5rem !important;
 }

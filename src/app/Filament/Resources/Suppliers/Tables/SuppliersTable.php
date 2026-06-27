@@ -8,6 +8,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class SuppliersTable
@@ -17,33 +18,56 @@ class SuppliersTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->label('نام')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
                 TextColumn::make('country')
-                    ->searchable(),
+                    ->label('کشور')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('city')
-                    ->searchable(),
+                    ->label('شهر')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('phone')
-                    ->searchable(),
+                    ->label('تلفن')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
+                    ->label('ایمیل')
+                    ->searchable()
+                    ->copyable()
+                    ->toggleable(),
                 TextColumn::make('website')
-                    ->searchable(),
+                    ->label('وب‌سایت')
+                    ->url(fn ($state) => $state ? $state : null, true)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('tags')
-                    ->searchable(),
+                    ->label('برچسب‌ها')
+                    ->badge()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_active')
-                    ->boolean(),
+                    ->label('فعال')
+                    ->boolean()
+                    ->sortable(),
                 TextColumn::make('created_at')
+                    ->label('تاریخ ایجاد')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('تاریخ بروزرسانی')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                TernaryFilter::make('is_active')
+                    ->label('وضعیت فعال‌بودن')
+                    ->placeholder('همه')
+                    ->trueLabel('فعال')
+                    ->falseLabel('غیرفعال'),
             ])
             ->recordActions([
                 ViewAction::make(),

@@ -8,20 +8,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Supplier extends Model
 {
     protected $fillable = [
-        'name',
-        'country',
-        'city',
-        'address',
-        'phone',
-        'email',
-        'website',
-        'tags',
-        'notes',
-        'is_active',
+        "name",
+        "country",
+        "city",
+        "address",
+        "phone",
+        "email",
+        "website",
+        "tags",
+        "notes",
+        "is_active",
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        "is_active" => "boolean",
     ];
 
     public function contacts(): HasMany
@@ -32,5 +32,10 @@ class Supplier extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(SupplierAttachment::class);
+    }
+
+    public function parts(): HasMany
+    {
+        return $this->hasMany(SupplierPart::class);
     }
 }

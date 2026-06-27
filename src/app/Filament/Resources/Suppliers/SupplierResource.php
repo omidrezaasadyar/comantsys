@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Filament\Resources\Suppliers;
+use App\Filament\Resources\Suppliers\RelationManagers\ContactsRelationManager;
+use App\Filament\Resources\Suppliers\RelationManagers\PartsRelationManager;
 
 use App\Filament\Resources\Suppliers\Pages\CreateSupplier;
 use App\Filament\Resources\Suppliers\Pages\EditSupplier;
@@ -15,6 +17,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class SupplierResource extends Resource
 {
@@ -23,7 +26,25 @@ class SupplierResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'name';
-    
+
+    protected static string|UnitEnum|null $navigationGroup = 'خرید و تأمین';
+
+    protected static ?int $navigationSort = 10;
+
+    public static function getModelLabel(): string
+    {
+        return 'تأمین‌کننده';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'تأمین‌کنندگان';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'تأمین‌کنندگان';
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -43,7 +64,8 @@ class SupplierResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ContactsRelationManager::class,
+            PartsRelationManager::class,
         ];
     }
 
