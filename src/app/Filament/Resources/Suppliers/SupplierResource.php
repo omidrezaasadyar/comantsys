@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Suppliers;
 use App\Filament\Resources\Suppliers\RelationManagers\ContactsRelationManager;
 use App\Filament\Resources\Suppliers\RelationManagers\PartsRelationManager;
+use App\Filament\Resources\Suppliers\RelationManagers\AttachmentsRelationManager;
 
 use App\Filament\Resources\Suppliers\Pages\CreateSupplier;
 use App\Filament\Resources\Suppliers\Pages\EditSupplier;
@@ -66,6 +67,7 @@ class SupplierResource extends Resource
         return [
             ContactsRelationManager::class,
             PartsRelationManager::class,
+            AttachmentsRelationManager::class,
         ];
     }
 
