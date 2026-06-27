@@ -76,3 +76,9 @@
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
     padding: 2.5rem !important;
 }
+
+/* header color */
+.fi-section-header { background-color: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); border-start-start-radius: 0.75rem; border-start-end-radius: 0.75rem; }
+.fi-grid.lg\:fi-grid-cols { align-items: stretch; }
+.fi-grid.lg\:fi-grid-cols > .fi-grid-col { display: flex; }
+.fi-grid.lg\:fi-grid-cols > .fi-grid-col > .fi-sc-component, .fi-grid.lg\:fi-grid-cols > .fi-grid-col > .fi-sc-component > .fi-sc-section, .fi-grid.lg\:fi-grid-cols > .fi-grid-col .fi-section { width: 100%; height: 100%; }
