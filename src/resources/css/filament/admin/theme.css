@@ -37,19 +37,41 @@
 .dark .fi-body,
 .dark .fi-main,
 .dark .fi-layout {
-    background-color: #1e1e22 !important;
+    background-color: #0f172a !important;
 }
 
 .dark .fi-sidebar,
 .dark .fi-topbar {
-    background-color: #18181c !important;
+    background-color: #1e293b !important;
 }
 
 .dark .fi-section {
-    background-color: #28282d !important;
+    background-color: #1E2740 !important;
 }
 .dark .fi-section-content-ctn {
     background-color: transparent !important;
+}
+
+/* جدول‌ها (پیوست‌ها، قطعات، افراد تماس) — تبعیت از تم سرمه‌ای */
+/* جدول‌ها (پیوست‌ها، قطعات، افراد تماس) — تبعیت از تم سرمه‌ای */
+.dark .fi-ta,
+.dark .fi-ta-ctn {
+    background-color: #1E2740 !important;
+    overflow: hidden;
+}
+.dark .fi-ta-header,
+.dark .fi-ta-header-cell,
+.dark .fi-ta-row,
+.dark .fi-ta-cell {
+    background-color: transparent !important;
+}
+.dark .fi-ta-table thead {
+    background-color: rgba(30, 41, 59, 0.5) !important;
+}
+.dark .fi-ta-ctn,
+.dark .fi-ta {
+    border-radius: 0.75rem;
+    overflow: hidden;
 }
 /* ============================================================
    صفحهٔ لاگین — تصویر تمام‌صفحه + کارت شناور
@@ -79,6 +101,30 @@
 
 /* header color */
 .fi-section-header { background-color: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06); border-start-start-radius: 0.75rem; border-start-end-radius: 0.75rem; }
+.dark .fi-section-header { background-color: rgba(96,165,250,0.12); border-bottom: 1px solid rgba(96,165,250,0.2); }
 .fi-grid.lg\:fi-grid-cols { align-items: stretch; }
 .fi-grid.lg\:fi-grid-cols > .fi-grid-col { display: flex; }
 .fi-grid.lg\:fi-grid-cols > .fi-grid-col > .fi-sc-component, .fi-grid.lg\:fi-grid-cols > .fi-grid-col > .fi-sc-component > .fi-sc-section, .fi-grid.lg\:fi-grid-cols > .fi-grid-col .fi-section { width: 100%; height: 100%; }
+/* جداکنندهٔ ظریف بین ردیف‌های Infolist */
+.fi-in-entry {
+    padding-block: 0.5rem;
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+.fi-section-content .fi-grid-col:last-child .fi-in-entry {
+    border-bottom: none;
+}
+/* دونقطه بعد از برچسب‌های Infolist + راست‌چین مقادیر */
+.fi-in-entry-label::after {
+    content: " :";
+}
+.fi-in-entry-content {
+    text-align: left;
+    justify-content: flex-start;
+}
+/* فیلدهای تمام‌عرض (نشانی، یادداشت) — متن از راست شروع شود */
+/* فقط نشانی و یادداشت — تمام‌عرض و راست‌چین */
+/* نشانی و یادداشت — متن از راست شروع شود */
+.entry-fullwidth {
+    text-align: right !important;
+    width: 100%;
+}
