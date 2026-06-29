@@ -53,7 +53,6 @@
 }
 
 /* جدول‌ها (پیوست‌ها، قطعات، افراد تماس) — تبعیت از تم سرمه‌ای */
-/* جدول‌ها (پیوست‌ها، قطعات، افراد تماس) — تبعیت از تم سرمه‌ای */
 .dark .fi-ta,
 .dark .fi-ta-ctn {
     background-color: #1E2740 !important;
@@ -127,4 +126,61 @@
 .entry-fullwidth {
     text-align: right !important;
     width: 100%;
+}
+/* ===== فشرده‌سازی فرم‌ها ===== */
+
+/* padding داخلی کادرها */
+.fi-section-content {
+    padding: 0.75rem !important;
+}
+
+/* هدر کادرها کمی جمع‌تر */
+.fi-section-header {
+    padding: 0.75rem 1rem !important;
+}
+
+/* فاصلهٔ عمودی بین فیلدها در یک بخش */
+.fi-section-content .fi-fo-component-ctn {
+    gap: 0.75rem !important;
+}
+
+/* فاصلهٔ برچسب تا ورودی */
+.fi-fo-field-wrp {
+    gap: 0.25rem !important;
+}
+
+/* ارتفاع ورودی‌ها (تکست‌باکس‌ها و سلکت‌ها) */
+.fi-input-wrp .fi-input {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+}
+
+/* فاصلهٔ بین کادرهای داخل Repeater (هزینه‌ها) */
+.fi-fo-repeater {
+    gap: 0.5rem !important;
+}
+
+.fi-fo-repeater-item .fi-section-content {
+    padding: 0.6rem !important;
+}
+/* ===== رنگ اعداد نتیجهٔ محاسبه در فرم فروش ===== */
+input.sale-revenue,
+.dark input.sale-revenue {
+    color: #f59e0b !important;   /* درآمد — نارنجی */
+    font-weight: 700 !important;
+    -webkit-text-fill-color: #f59e0b !important;
+}
+
+input.sale-cost,
+.dark input.sale-cost {
+    color: #ef4444 !important;   /* هزینهٔ کل — قرمز */
+    font-weight: 700 !important;
+    -webkit-text-fill-color: #ef4444 !important;
+}
+
+input.sale-profit,
+.dark input.sale-profit {
+    color: #22c55e !important;   /* سود — سبز */
+    font-weight: 700 !important;
+    -webkit-text-fill-color: #22c55e !important;
 }
