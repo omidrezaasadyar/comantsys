@@ -49,9 +49,18 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+# Container start-time entrypoint (copied as root so it is executable & root-owned,
+# placed outside /var/www/html so the ./src bind mount cannot overlay it).
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # ساخت کاربر هم‌UID با میزبان تا فایل‌های ساخته‌شده مال کاربر میزبان باشند
 ARG UID=1000
 ARG GID=1000
 RUN groupadd -g ${GID} appuser \
     && useradd -u ${UID} -g ${GID} -m -s /bin/bash appuser
 USER appuser
+
+# Run per-session steps at START (as appuser), then exec the CMD (php-fpm).
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["php-fpm"]

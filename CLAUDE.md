@@ -59,6 +59,8 @@ docker compose up -d        # start
 docker compose down && docker compose up -d   # reliable restart (volume-mount pitfall)
 ```
 
+**Frontend assets build automatically at container start.** `docker/entrypoint.sh` (runs as `appuser`, PID 1, before `php-fpm`) runs `npm run build` when assets are stale/missing, then execs `php-fpm`. No manual `npm run build` per session. It lives outside `/var/www/html` so the `./src` bind mount can't overlay it.
+
 **Viewing the app:** `http://localhost:8095` in the Windows browser (port bound to `127.0.0.1` only — not reachable from outside the machine).
 
 **Verification is currently manual:** check behavior in the browser and inspect DB state via artisan/tinker inside the container. There is no automated test suite yet. After every file edit, verify the change landed with `cat`/`grep` — never assume a save or paste succeeded.
@@ -116,12 +118,10 @@ Largely complete. Current PDF output spec:
 > The only section that changes often. Update it at the end of every working session.
 
 **Remaining in the Invoices module:**
-- Equal-height alignment of national-ID / economic-code boxes with the barcode in the PDF header.
 - English/LTR invoice template for foreign customers.
 
 **General debt:**
 - **Rotate the database password** (security hygiene).
-- Make the `chown` and `npm run build` steps permanent in the Dockerfile entrypoint (currently done manually each session).
 - `compose.yaml` comment says the web port binds to the Tailscale IP, but the actual value is `127.0.0.1` — reconcile comment with reality (or intent).
 
 **On the horizon (scope not yet defined):**
