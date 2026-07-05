@@ -20,6 +20,9 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Enums\ThemeMode;
 use Filament\Support\Enums\Width;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
+use Morilog\Jalali\Jalalian;
 
 
 
@@ -33,6 +36,8 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login(\App\Filament\Auth\Login::class)
+            ->profile(\App\Filament\Auth\EditProfile::class)
+            ->defaultAvatarProvider(\App\Filament\AvatarProviders\InitialsAvatarProvider::class)
             ->brandName('سامانه مدیریت شرکتی')
             ->sidebarCollapsibleOnDesktop()
             ->defaultThemeMode(ThemeMode::Light)
@@ -56,6 +61,17 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Vazirmatn')
             ->maxContentWidth(Width::Full)
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): View => view('filament.topbar.tools'),
+            )
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
+                fn (): View => view('filament.topbar.dates', [
+                    'jalali'    => Jalalian::forge(now())->format('Y/m/d'),
+                    'gregorian' => now()->format('Y/m/d'),
+                ]),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

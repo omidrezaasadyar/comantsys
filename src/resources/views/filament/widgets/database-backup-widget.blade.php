@@ -1,12 +1,21 @@
-<x-filament-widgets::widget>
-    <x-filament::section>
-        <x-slot name="heading">{{ __('dashboard.backup_db') }}</x-slot>
+{{-- Compact topbar form: single database icon → dropdown (backup / restore) + modals. --}}
+<div class="fi-backup-tools">
+    <x-filament-actions::group
+        :actions="[$this->backupAction, $this->restoreAction]"
+        :icon="\Filament\Support\Icons\Heroicon::CircleStack"
+        icon-button
+        color="gray"
+        :label="__('dashboard.database')"
+        :tooltip="__('dashboard.database')"
+    />
 
-        <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; padding: 0.5rem 0;">
-            {{ $this->backupAction }}
-            {{ $this->restoreAction }}
-        </div>
+    <x-filament-actions::modals />
+</div>
 
-        <x-filament-actions::modals />
-    </x-filament::section>
-</x-filament-widgets::widget>
+<style>
+    .fi-backup-tools {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+</style>

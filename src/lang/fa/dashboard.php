@@ -22,6 +22,7 @@ return [
 
 
     'backup_db' => 'پشتیبان‌گیری از دیتابیس',
+    'database' => 'پایگاه داده',
     'restore_db' => 'بازیابی دیتابیس',
     'restore_file' => 'فایل پشتیبان',
     'admin_password' => 'رمز عبور مدیر',

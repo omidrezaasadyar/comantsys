@@ -23,18 +23,13 @@ class DatabaseBackupWidget extends Widget implements HasActions, HasSchemas
 
     protected string $view = 'filament.widgets.database-backup-widget';
 
-    protected static ?int $sort = -3;
-
-    protected int | string | array $columnSpan = 1;
-
     public function backupAction(): Action
     {
         return Action::make('backup')
             ->label(__('dashboard.backup_db'))
             ->icon(Heroicon::ArrowDownTray)
             ->color('primary')
-            ->iconButton()
-            ->tooltip(__('dashboard.backup_db'))
+            ->grouped()
             ->requiresConfirmation()
             ->modalHeading(__('dashboard.backup_db'))
             ->action(function () {
@@ -61,8 +56,7 @@ class DatabaseBackupWidget extends Widget implements HasActions, HasSchemas
             ->label(__('dashboard.restore_db'))
             ->icon(Heroicon::ArrowUpTray)
             ->color('danger')
-            ->iconButton()
-            ->tooltip(__('dashboard.restore_db'))
+            ->grouped()
             ->modalHeading(__('dashboard.restore_db'))
             ->form([
                 \Filament\Forms\Components\Select::make('backup_file')

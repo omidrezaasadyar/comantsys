@@ -123,6 +123,7 @@ Largely complete. Current PDF output spec:
 **General debt:**
 - **Rotate the database password** (security hygiene).
 - `compose.yaml` comment says the web port binds to the Tailscale IP, but the actual value is `127.0.0.1` — reconcile comment with reality (or intent).
+- Rename/move `DatabaseBackupWidget` out of `Widgets/` (no longer a dashboard widget — now rendered in the topbar via a render hook).
 
 **On the horizon (scope not yet defined):**
 - Further module development.
