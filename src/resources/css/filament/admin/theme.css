@@ -34,11 +34,21 @@
 
 /* ===== تم تیره (override) ===== */
 
+/* src/resources/css/filament/admin/theme.css */
 .dark .fi-body,
-.dark .fi-main,
-.dark .fi-layout {
+.dark .fi-layout,
+.dark .fi-main-ctn,
+/* src/resources/css/filament/admin/theme.css */
+/* src/resources/css/filament/admin/theme.css */
+.dark .fi-main {
     background-color: #0f172a !important;
+    background-image:
+        radial-gradient(1300px 650px at 100% 0%, rgba(56, 130, 246, 0.30), transparent 60%),
+        radial-gradient(1100px 750px at 0% 100%, rgba(20, 160, 190, 0.24), transparent 55%),
+        linear-gradient(160deg, #0a1120 0%, #0f172a 45%, #16264a 100%) !important;
+    background-attachment: fixed !important;
 }
+/* src/resources/css/filament/admin/theme.css */
 
 .dark .fi-sidebar,
 .dark .fi-topbar {
@@ -163,24 +173,4 @@
 .fi-fo-repeater-item .fi-section-content {
     padding: 0.6rem !important;
 }
-/* ===== رنگ اعداد نتیجهٔ محاسبه در فرم فروش ===== */
-input.sale-revenue,
-.dark input.sale-revenue {
-    color: #f59e0b !important;   /* درآمد — نارنجی */
-    font-weight: 700 !important;
-    -webkit-text-fill-color: #f59e0b !important;
-}
 
-input.sale-cost,
-.dark input.sale-cost {
-    color: #ef4444 !important;   /* هزینهٔ کل — قرمز */
-    font-weight: 700 !important;
-    -webkit-text-fill-color: #ef4444 !important;
-}
-
-input.sale-profit,
-.dark input.sale-profit {
-    color: #22c55e !important;   /* سود — سبز */
-    font-weight: 700 !important;
-    -webkit-text-fill-color: #22c55e !important;
-}

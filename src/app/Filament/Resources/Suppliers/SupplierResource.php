@@ -28,7 +28,7 @@ class SupplierResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected static string|UnitEnum|null $navigationGroup = 'خرید و تأمین';
+    protected static string|UnitEnum|null $navigationGroup = 'فروش و تأمین';
 
     protected static ?int $navigationSort = 10;
 
