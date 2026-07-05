@@ -12,7 +12,7 @@
 
 - **Step by step:** one action per message; wait for explicit confirmation before the next step. This is a firm preference.
 - **Full file path** at the top of every code block.
-- **Language split:** chat in Persian; terminal commands in English.
+- **Language split:** chat in Persian on claude.ai; in Claude Code terminal sessions respond in English (the terminal cannot render RTL text); terminal commands and code are always in English.
 - **PHP goes in VS Code, bash goes in the terminal.** Recurring pattern: PHP accidentally pasted into the terminal causes bash syntax errors — flag when switching between the two.
 - **Engineering-first answers:** professional, precise, with trade-off reasoning. The developer accepts engineering trade-offs when the reasoning is laid out.
 - **Filament v5 API:** never trust internet docs; always `grep` the vendor source before writing an API call.
@@ -121,7 +121,6 @@ Largely complete. Current PDF output spec:
 
 **General debt:**
 - **Rotate the database password** (security hygiene).
-- **Audit `EditSale.php`** — may still contain debug code (`handleRecordUpdate`, `Log::info`); needs inspection and cleanup.
 - Make the `chown` and `npm run build` steps permanent in the Dockerfile entrypoint (currently done manually each session).
 - `compose.yaml` comment says the web port binds to the Tailscale IP, but the actual value is `127.0.0.1` — reconcile comment with reality (or intent).
 
