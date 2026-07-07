@@ -16,6 +16,39 @@ services:
     depends_on:
       - db
 
+  # Queue worker — processes the 'sourcing' (and default) queue automatically,
+  # so jobs no longer need a manual `php artisan queue:work`. Same image/build
+  # as app; RUN_ASSET_BUILD=0 makes the shared entrypoint skip the Vite build.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: 1000
+        GID: 1000
+    container_name: comantsys-worker
+    restart: unless-stopped
+    working_dir: /var/www/html
+    environment:
+      RUN_ASSET_BUILD: "0"
+    command:
+      - php
+      - artisan
+      - queue:work
+      - database
+      - --queue=sourcing,default
+      - --sleep=3
+      - --tries=2
+      - --timeout=240
+      - --max-jobs=500
+    volumes:
+      - ./src:/var/www/html
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+
   web:
     image: nginx:1.27-alpine
     container_name: comantsys-web
@@ -43,6 +76,13 @@ services:
       - comantsys-db-data:/var/lib/postgresql/data
     networks:
       - internal
+    # Lets the worker wait for a ready DB (depends_on: condition: service_healthy).
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 networks:
   internal:
