@@ -55,7 +55,10 @@ class Inquiry extends Model
             'cancelled' => __('inquiries.status.cancelled'),
         ];
     }
-
+    public function sourcingResults(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\SourcingResult::class);
+    }
     /**
      * رنگ نشان (badge) هر وضعیت — برای هماهنگی بصری بین جدول و صفحهٔ نمایش.
      *
