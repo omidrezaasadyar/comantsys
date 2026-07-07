@@ -34,6 +34,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         chromium \
         chromium-sandbox \
         fonts-liberation \
+        tesseract-ocr \
+        tesseract-ocr-eng \
+        tesseract-ocr-fas \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 # PostgreSQL client 17 (matches server; for DB backup/restore via pg_dump/pg_restore)
 RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg \
