@@ -7,6 +7,7 @@ use App\Models\SourcingRun;
 use App\Services\Sourcing\Contracts\LlmProviderInterface;
 use App\Services\Sourcing\Contracts\SearchProviderInterface;
 use App\Services\Sourcing\DTOs\SearchResult;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -47,12 +48,20 @@ class SourcingAgentService
             $queryResponse = $this->llm->chat($this->queryPrompt($partText), [
                 'system'      => 'You are a procurement research assistant. Reply with the search query text only — no quotes, no explanation.',
                 'temperature' => 0.2,
-                'max_tokens'  => 100,
+                // Gemini 2.5 thinking tokens share the output budget, so a low cap
+                // truncates the visible query mid-string; the query itself stays ~1 line.
+                'max_tokens'  => 500,
             ]);
 
             $query = trim($queryResponse->content);
             $run->query = $query;
             $run->save();
+
+            // Fail fast on a garbage query (e.g. truncated to "S") before spending
+            // a paid Tavily credit; the catch block below records the run as failed.
+            if (mb_strlen($query) < 5) {
+                throw new RuntimeException("Generated search query is too short to be usable: \"{$query}\"");
+            }
 
             // 3. Web search.
             $searchOptions = array_filter([
@@ -144,6 +153,8 @@ class SourcingAgentService
             $partText,
             '',
             'Task: Produce ONE concise, effective ENGLISH web-search query to find suppliers, manufacturers, or distributors that sell this part/product. Emphasize the product name, part number, and specifications, and include words like "supplier" or "manufacturer" where helpful.',
+            '',
+            'HARD REQUIREMENT: if the part details above include a part number, that exact part number MUST appear verbatim (unchanged, same characters) in the query.',
             '',
             'Output ONLY the search query text on a single line — no quotes, no explanation.',
         ]);

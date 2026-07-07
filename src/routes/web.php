@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\InquiryAttachmentController;
+use App\Http\Controllers\SourcingRequestAttachmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -17,4 +18,9 @@ Route::get('/user/{user}/avatar', AvatarController::class)
 Route::get('/inquiry-attachments/{attachment}/download', InquiryAttachmentController::class)
     ->middleware('auth')
     ->name('inquiry-attachment.download');
+
+// Serve sourcing-request attachments from the private disk; auth-gated.
+Route::get('/sourcing-request-attachments/{attachment}/download', SourcingRequestAttachmentController::class)
+    ->middleware('auth')
+    ->name('sourcing-request-attachment.download');
 
