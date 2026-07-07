@@ -2,16 +2,16 @@
 
 namespace App\Services\Sourcing;
 
-use App\Models\Inquiry;
-use App\Models\SourcingResult;
+use App\Models\SourcingRequest;
+use App\Models\SourcingRun;
 use App\Services\Sourcing\Contracts\LlmProviderInterface;
 use App\Services\Sourcing\Contracts\SearchProviderInterface;
 use App\Services\Sourcing\DTOs\SearchResult;
 use Throwable;
 
 /**
- * Orchestrates one supplier-sourcing run for an inquiry:
- * LLM query-building → web search → LLM analysis → persisted SourcingResult.
+ * Orchestrates one supplier-sourcing run for a standalone sourcing request:
+ * LLM query-building → web search → LLM analysis → persisted SourcingRun.
  *
  * The whole run is wrapped in try/catch: the row never ends up stuck in
  * 'running', paid search data is persisted before the (fallible) analysis
@@ -24,7 +24,7 @@ class SourcingAgentService
         private readonly SearchProviderInterface $search,
     ) {}
 
-    public function run(Inquiry $inquiry, SourcingResult $result, array $options = []): SourcingResult
+    public function run(SourcingRequest $request, SourcingRun $run, array $options = []): SourcingRun
     {
         $language = $options['language'] ?? config('sourcing.agent.output_language', 'fa');
 
@@ -32,7 +32,7 @@ class SourcingAgentService
             // 1. Mark the run as started and stamp provider metadata.
             $providerKey = config('sourcing.llm.provider');
 
-            $result->fill([
+            $run->fill([
                 'status'          => 'running',
                 'started_at'      => now(),
                 'llm_provider'    => $this->llm->name(),
@@ -40,19 +40,19 @@ class SourcingAgentService
                 'llm_model'       => config("sourcing.llm.{$providerKey}.model"),
             ])->save();
 
-            $items = $this->itemsText($inquiry);
+            $partText = $this->partText($request);
 
-            // 2. LLM call #1 — collapse the (Persian/mixed) items into one
-            //    effective English supplier-search query.
-            $queryResponse = $this->llm->chat($this->queryPrompt($items), [
+            // 2. LLM call #1 — collapse the (Persian/mixed) part details into
+            //    one effective English supplier-search query.
+            $queryResponse = $this->llm->chat($this->queryPrompt($partText), [
                 'system'      => 'You are a procurement research assistant. Reply with the search query text only — no quotes, no explanation.',
                 'temperature' => 0.2,
                 'max_tokens'  => 100,
             ]);
 
             $query = trim($queryResponse->content);
-            $result->query = $query;
-            $result->save();
+            $run->query = $query;
+            $run->save();
 
             // 3. Web search.
             $searchOptions = array_filter([
@@ -65,11 +65,11 @@ class SourcingAgentService
 
             // 4. Persist the raw search payload IMMEDIATELY — the paid search
             //    data must survive even if the analysis call below fails.
-            $result->raw_search = array_map(static fn (SearchResult $r): array => $r->raw, $searchResults);
-            $result->save();
+            $run->raw_search = array_map(static fn (SearchResult $r): array => $r->raw, $searchResults);
+            $run->save();
 
             // 5. LLM call #2 — analyze the results into strict JSON.
-            $analysisResponse = $this->llm->chat($this->analysisPrompt($items, $searchResults, $language), [
+            $analysisResponse = $this->llm->chat($this->analysisPrompt($partText, $searchResults, $language), [
                 'system'    => 'You are a procurement analyst. Respond with strict JSON only.',
                 'json_mode' => true,
             ]);
@@ -77,7 +77,7 @@ class SourcingAgentService
             $parsed = $analysisResponse->json(); // throws on invalid JSON — fail loudly
 
             // 6. Success: store results and the summed token usage across both calls.
-            $result->fill([
+            $run->fill([
                 'status'        => 'completed',
                 'results'       => $parsed,
                 'input_tokens'  => $queryResponse->inputTokens + $analysisResponse->inputTokens,
@@ -85,11 +85,11 @@ class SourcingAgentService
                 'finished_at'   => now(),
             ])->save();
 
-            return $result;
+            return $run;
         } catch (Throwable $e) {
             // 7. Any failure: record it, stamp finish time, save, then rethrow
             //    so the queue can apply its retry policy. Never leave 'running'.
-            $result->fill([
+            $run->fill([
                 'status'      => 'failed',
                 'error'       => $e->getMessage(),
                 'finished_at' => now(),
@@ -100,45 +100,50 @@ class SourcingAgentService
     }
 
     /**
-     * Render the inquiry's line items as a readable bullet list.
-     * Uses the `description` column plus quantity and the `unit_label`
-     * accessor (free text when the unit is «سایر»).
+     * Compose the part-to-source description from the request fields
+     * (part_name + part_number + description) plus any extra context.
+     * Any field may be Persian, English, or mixed.
      */
-    private function itemsText(Inquiry $inquiry): string
+    private function partText(SourcingRequest $request): string
     {
-        $lines = $inquiry->items
-            ->map(function ($item): ?string {
-                $description = trim((string) $item->description);
+        $lines = ['Part name: ' . trim((string) $request->part_name)];
 
-                if ($description === '') {
-                    return null;
-                }
+        if (filled($request->part_number)) {
+            $lines[] = 'Part number: ' . trim((string) $request->part_number);
+        }
 
-                $parts = [$description];
+        if (filled($request->description)) {
+            $lines[] = 'Description: ' . trim((string) $request->description);
+        }
 
-                if (filled($item->quantity)) {
-                    $quantity = rtrim(rtrim((string) $item->quantity, '0'), '.');
-                    $unit     = trim((string) $item->unit_label);
-                    $parts[]  = 'qty: ' . $quantity . ($unit !== '' ? ' ' . $unit : '');
-                }
+        $extra = trim($this->extraContext($request));
 
-                return '- ' . implode(' | ', $parts);
-            })
-            ->filter()
-            ->implode("\n");
+        if ($extra !== '') {
+            $lines[] = 'Additional context: ' . $extra;
+        }
 
-        return $lines !== '' ? $lines : '- (no items listed)';
+        return implode("\n", $lines);
     }
 
-    private function queryPrompt(string $items): string
+    /**
+     * Extension point for extra query/analysis context — e.g. OCR text
+     * extracted from the request's attachments. Wired in a later step;
+     * returns an empty string for now.
+     */
+    protected function extraContext(SourcingRequest $request): string
+    {
+        return '';
+    }
+
+    private function queryPrompt(string $partText): string
     {
         return implode("\n", [
-            'The following are line items from a procurement inquiry. They may be written in Persian, English, or a mix.',
+            'The following describes a single part/product to source. The details may be written in Persian, English, or a mix.',
             '',
-            'Items:',
-            $items,
+            'Part details:',
+            $partText,
             '',
-            'Task: Produce ONE concise, effective ENGLISH web-search query to find suppliers, manufacturers, or distributors that sell these parts/products. Emphasize product names and specifications, and include words like "supplier" or "manufacturer" where helpful.',
+            'Task: Produce ONE concise, effective ENGLISH web-search query to find suppliers, manufacturers, or distributors that sell this part/product. Emphasize the product name, part number, and specifications, and include words like "supplier" or "manufacturer" where helpful.',
             '',
             'Output ONLY the search query text on a single line — no quotes, no explanation.',
         ]);
@@ -147,7 +152,7 @@ class SourcingAgentService
     /**
      * @param SearchResult[] $searchResults
      */
-    private function analysisPrompt(string $items, array $searchResults, string $language): string
+    private function analysisPrompt(string $partText, array $searchResults, string $language): string
     {
         $languageName = $language === 'en' ? 'English' : 'Persian (Farsi)';
 
@@ -163,15 +168,15 @@ class SourcingAgentService
         }
 
         return implode("\n", [
-            'You are analyzing web search results to identify suppliers for a procurement inquiry.',
+            'You are analyzing web search results to identify suppliers for a part-sourcing request.',
             '',
-            'Inquiry items:',
-            $items,
+            'Part to source:',
+            $partText,
             '',
             'Search results:',
             $resultsText,
             '',
-            'From the search results, identify the most relevant suppliers for the inquiry items. Respond with STRICT JSON in exactly this shape:',
+            'From the search results, identify the most relevant suppliers for this part. Respond with STRICT JSON in exactly this shape:',
             '',
             '{',
             '  "suppliers": [',

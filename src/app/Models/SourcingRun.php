@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SourcingResult extends Model
+class SourcingRun extends Model
 {
     protected $fillable = [
-        'inquiry_id',
+        'sourcing_request_id',
         'status',
         'query',
         'llm_provider',
@@ -23,6 +23,11 @@ class SourcingResult extends Model
         'finished_at',
     ];
 
+    /**
+     * Casts live ONLY here — never inside $fillable (silent-bug pattern in this repo).
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -33,8 +38,8 @@ class SourcingResult extends Model
         ];
     }
 
-    public function inquiry(): BelongsTo
+    public function sourcingRequest(): BelongsTo
     {
-        return $this->belongsTo(Inquiry::class);
+        return $this->belongsTo(SourcingRequest::class);
     }
 }
