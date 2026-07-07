@@ -21,7 +21,8 @@ class SourcingServiceProvider extends ServiceProvider
     ];
 
     private const SEARCH_PROVIDERS = [
-        'brave' => \App\Services\Sourcing\Providers\BraveSearchProvider::class,
+        'tavily' => \App\Services\Sourcing\Providers\TavilySearchProvider::class,
+        // 'brave' => \App\Services\Sourcing\Providers\BraveSearchProvider::class,
     ];
 
     private const OCR_PROVIDERS = [

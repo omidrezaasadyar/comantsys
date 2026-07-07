@@ -23,12 +23,14 @@ return [
     ],
 
     'search' => [
-        'provider' => env('SOURCING_SEARCH_PROVIDER', 'brave'),
+        'provider' => env('SOURCING_SEARCH_PROVIDER', 'tavily'),
 
-        'brave' => [
-            'api_key'  => env('BRAVE_API_KEY'),
-            'base_url' => 'https://api.search.brave.com/res/v1',
-            'timeout'  => 30,
+        'tavily' => [
+            'api_key'      => env('TAVILY_API_KEY'),
+            'base_url'     => 'https://api.tavily.com',
+            'timeout'      => 30,
+            'search_depth' => 'basic',   // basic = 1 credit, advanced = 2 credits
+            'max_results'  => 5,
         ],
     ],
 
