@@ -15,6 +15,7 @@
 - **Language split:** chat in Persian on claude.ai; in Claude Code terminal sessions respond in English (the terminal cannot render RTL text); terminal commands and code are always in English.
 - **PHP goes in VS Code, bash goes in the terminal.** Recurring pattern: PHP accidentally pasted into the terminal causes bash syntax errors — flag when switching between the two.
 - **Engineering-first answers:** professional, precise, with trade-off reasoning. The developer accepts engineering trade-offs when the reasoning is laid out.
+- **Division of labor:** implementation runs through Claude Code prompts — Claude may run `artisan`/`composer`/`docker` commands and iterate until green. **Commits and pushes stay manual with the developer;** Claude never commits or pushes.
 - **Filament v5 API:** never trust internet docs; always `grep` the vendor source before writing an API call.
 - The developer never shares passwords in chat; GUI guidance is given screen-by-screen from screenshots.
 - **End of every working session:** update the "Current State & Open Items" section of this file to reflect what changed. Keep it a snapshot, not a log.
@@ -52,14 +53,14 @@ docker compose exec app php artisan test
 docker compose exec app composer require <pkg>
 ```
 
-**Docker services:** `app` (PHP-FPM), `db` (PostgreSQL 17), `web` (nginx). Compose file is `compose.yaml` (not `docker-compose.yml`). Start/stop from the repo root:
+**Docker services:** `app` (PHP-FPM), `db` (PostgreSQL 17), `web` (nginx), `worker` (queue worker — runs `queue:work` on the `sourcing` queue automatically). Compose file is `compose.yaml` (not `docker-compose.yml`). Start/stop from the repo root:
 
 ```bash
 docker compose up -d        # start
 docker compose down && docker compose up -d   # reliable restart (volume-mount pitfall)
 ```
 
-**Frontend assets build automatically at container start.** `docker/entrypoint.sh` (runs as `appuser`, PID 1, before `php-fpm`) runs `npm run build` when assets are stale/missing, then execs `php-fpm`. No manual `npm run build` per session. It lives outside `/var/www/html` so the `./src` bind mount can't overlay it.
+**Container start is handled by `docker/entrypoint.sh`** (runs as `appuser`, PID 1, before the main process; lives outside `/var/www/html` so the `./src` bind mount can't overlay it). It ensures `storage/` + `bootstrap/cache` exist and are writable (the old manual-`chown` step), runs `npm ci` only when `node_modules` is missing, rebuilds Vite assets **only** when the manifest is missing or stale, clears the config cache, then execs the container's command (`php-fpm` for `app`). No manual `npm run build` per session. The `worker` service reuses the same image but sets `RUN_ASSET_BUILD=0` to skip the build and go straight to `queue:work`, so queued jobs process automatically. The entrypoint is baked into the image — after editing it, rebuild with `docker compose up -d --build`.
 
 **Viewing the app:** `http://localhost:8095` in the Windows browser (port bound to `127.0.0.1` only — not reachable from outside the machine).
 
@@ -72,6 +73,7 @@ docker compose down && docker compose up -d   # reliable restart (volume-mount p
 - **Suppliers:** with Relation Managers for contacts, parts, and attachments.
 - **Sales:** with a cost Repeater, currency handling, attachments.
 - **Invoices / Proforma:** full PDF generation — details below.
+- **Sourcing (AI sourcing agent):** standalone module — automated supplier discovery from part data — details below.
 
 ### Invoices/Proforma module status
 Largely complete. Current PDF output spec:
@@ -84,6 +86,16 @@ Largely complete. Current PDF output spec:
 - **Watermark:** faint, diagonal.
 - **Template:** redesigned with rounded corners.
 - **Logo/stamp:** files live in `storage/app/private`, not `public` (this was the source of a bug).
+
+### Sourcing module (AI sourcing agent) status
+Standalone module — deliberately **decoupled from Inquiries** (an earlier prototype hung the agent off inquiry attachments; that coupling has been removed).
+
+- **Swappable provider architecture:** provider contracts (`Llm/Search/OcrProviderInterface`) + DTOs (`LlmResponse`, `SearchResult`), wired by env-driven, fail-loud bindings in `SourcingServiceProvider`. Any provider is swappable via `.env` + `config/sourcing.php` with no consumer changes.
+- **Evaluation-phase providers:** Gemini 2.5 Flash (LLM), Tavily (web search), Tesseract `eng+fas` (OCR, installed in the image). Production LLM/search to be chosen after evaluation.
+- **Schema:** two tables — `sourcing_requests` (part_name / part_number / description / status) and `sourcing_runs` (belongsTo request; status `pending|running|completed|failed`, query, provider/model, `results` + `raw_search` jsonb, token counts, timestamps). Attachments use the private-disk pattern (`sourcing_request_attachments` + auth-gated download route), same as Inquiries.
+- **Pipeline:** `SourcingAgentService::run(SourcingRequest, SourcingRun)` — LLM builds one English search query (part number forced verbatim) → Tavily search → LLM strict-JSON supplier analysis. Raw (paid) search is persisted **before** the analysis call; a short-query guard aborts before spending a Tavily credit; fail-loud, never leaves a row in `running`.
+- **Queue:** `RunSourcingAgent` job on the dedicated `sourcing` queue, processed automatically by the `worker` service.
+- **Filament:** standalone `SourcingRequestResource` («تأمین‌یابی هوشمند», group «فروش و تأمین») — run action with an output-language (`fa`/`en`) select, a duplicate-run guard (no second run while one is `pending|running`), 10s table polling, a read-only runs relation manager, and a results modal (suppliers + summary, RTL).
 
 ---
 
@@ -111,6 +123,10 @@ Largely complete. Current PDF output spec:
 - **Full-width dashboard:** requires a custom `App\Filament\Pages\Dashboard` class overriding `getMaxContentWidth()`; the panel-level setting does not affect the dashboard.
 - **Docker volume mount** sometimes comes up empty after a system restart — reliable fix: `docker compose down && docker compose up -d`.
 - **Heredoc blocks pasted into the terminal** write the literal text instead of executing — use `printf` to append CSS; edit PHP files directly in VS Code.
+- **Gemini 2.5 thinking tokens share the output budget** — a low `max_tokens` silently truncates the visible output mid-string (e.g. a part number cut off). Budget generously even for short outputs, and compare `thoughtsTokenCount` vs `candidatesTokenCount` when output looks cut off.
+- **Validate LLM-generated inputs before spending paid API calls** — e.g. a short-query guard (`mb_strlen($query) < 5` → throw) stops a garbage query from burning a Tavily credit; the existing failure path records the run as failed and preserves the message.
+- **`!` inside double-quoted bash strings triggers history expansion** and shatters the command — single-quote the string, or avoid `!` (notably in commit messages).
+- **Session-tool file edits can be *reported* but not *persisted*** — always verify on disk (`grep`/`ls`/`cat`) before acting on a reported edit; never assume a save succeeded.
 
 ---
 
@@ -118,14 +134,13 @@ Largely complete. Current PDF output spec:
 
 > The only section that changes often. Update it at the end of every working session.
 
-**Remaining in the Invoices module:**
-- English/LTR invoice template for foreign customers.
-
-**General debt:**
+**Open items:**
 - **Rotate the database password** (security hygiene).
+- **10c — OCR on sourcing attachments:** run Tesseract on a request's attachments and feed the extracted text into the query builder. The extension point is already marked in `SourcingAgentService` (`extraContext()`, currently returns `''`).
+- **English/LTR invoice template** for foreign customers.
+- **PDF header alignment** in the invoice template.
 - `compose.yaml` comment says the web port binds to the Tailscale IP, but the actual value is `127.0.0.1` — reconcile comment with reality (or intent).
 - Rename/move `DatabaseBackupWidget` out of `Widgets/` (no longer a dashboard widget — now rendered in the topbar via a render hook).
 
 **On the horizon (scope not yet defined):**
 - Further module development.
-</markdown>
