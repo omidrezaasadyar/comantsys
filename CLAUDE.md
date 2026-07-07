@@ -102,6 +102,7 @@ Largely complete. Current PDF output spec:
 
 ## 7. Pitfalls & Lessons Learned (highest-value section)
 
+- **Docker Desktop auto-update breaks port forwarding on Windows/WSL2** — after a Docker Desktop update, the Windows `hns` (Host Network Service) can fall out of sync with the new forwarding layer. Symptom: every `docker compose up` fails with `forwards/expose returned unexpected status: 500`, and even an unrelated `docker run -p 8097:80 nginx:alpine` fails the same way. Diagnostic: if the empty nginx test also fails, the problem is `hns`, not the project. Fix from an elevated PowerShell: `net stop hns && net start hns`, then restart Docker Desktop. Compose comes up normally afterward. Prevention: disable Docker Desktop auto-updates and update on schedule.
 - **`dehydrated(false)` on Shamsi date fields removes them from `$data`** — root cause of the inquiry-date bug.
 - **`$fillable` corruption:** accidentally placing cast definitions (`'field' => 'type'`) as key-value pairs inside `$fillable` makes Laravel's `fill()` silently ignore those fields — very hard to debug without reading the full model with `cat`.
 - **`saving` vs `saved` hooks for Repeater data:** the `saving` hook computes revenue/totals from form input; the `saved` hook reads costs from the DB after the Repeater writes them, then uses `saveQuietly()` to avoid an infinite loop.
