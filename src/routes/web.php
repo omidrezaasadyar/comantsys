@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AvatarController;
+use App\Http\Controllers\InquiryAttachmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -11,4 +12,9 @@ Route::get('/', function () {
 Route::get('/user/{user}/avatar', AvatarController::class)
     ->middleware('auth')
     ->name('user.avatar');
+
+// Serve inquiry attachments from the private disk; auth-gated.
+Route::get('/inquiry-attachments/{attachment}/download', InquiryAttachmentController::class)
+    ->middleware('auth')
+    ->name('inquiry-attachment.download');
 
