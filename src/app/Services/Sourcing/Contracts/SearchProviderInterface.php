@@ -10,8 +10,8 @@ interface SearchProviderInterface
      * Run a web search and return normalized results.
      *
      * @param string $query
-     * @param array  $options   'count' (int, max results),
-     *                          'country' (string), 'freshness' (string)
+     * @param array  $options   'search_depth' (string: basic|advanced),
+     *                          'max_results' (int)
      *
      * @return SearchResult[]
      */

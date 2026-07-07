@@ -15,11 +15,11 @@ return new class extends Migration
                   ->cascadeOnDelete();
 
             $table->string('status')->default('pending');   // pending|running|completed|failed
-            $table->text('query');
+            $table->text('query')->nullable();
 
-            $table->string('llm_provider');
-            $table->string('llm_model');
-            $table->string('search_provider');
+            $table->string('llm_provider')->nullable();
+            $table->string('llm_model')->nullable();
+            $table->string('search_provider')->nullable();
 
             $table->jsonb('results')->nullable();       // structured findings for UI
             $table->jsonb('raw_search')->nullable();    // raw search data for quality evaluation

@@ -44,6 +44,10 @@ return [
         ],
     ],
 
+    'agent' => [
+        'output_language' => env('SOURCING_OUTPUT_LANGUAGE', 'fa'),  // 'fa' | 'en'
+    ],
+
     'queue' => [
         'connection' => env('SOURCING_QUEUE_CONNECTION', 'database'),
         'queue_name' => env('SOURCING_QUEUE_NAME', 'sourcing'),
