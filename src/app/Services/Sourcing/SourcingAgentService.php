@@ -5,6 +5,7 @@ namespace App\Services\Sourcing;
 use App\Models\SourcingRequest;
 use App\Models\SourcingRequestAttachment;
 use App\Models\SourcingRun;
+use App\Services\Sourcing\Contracts\ExtractsPagesInterface;
 use App\Services\Sourcing\Contracts\LlmProviderInterface;
 use App\Services\Sourcing\Contracts\OcrProviderInterface;
 use App\Services\Sourcing\Contracts\SearchProviderInterface;
@@ -34,6 +35,7 @@ class SourcingAgentService
         private readonly LlmProviderInterface $llm,
         private readonly SearchProviderInterface $search,
         private readonly OcrProviderInterface $ocr,
+        private readonly ExtractsPagesInterface $extractor,
     ) {}
 
     public function run(SourcingRequest $request, SourcingRun $run, array $options = []): SourcingRun
@@ -64,16 +66,21 @@ class SourcingAgentService
             //    instructions call for them, capped at max_search_queries.
             $maxQueries = (int) config('sourcing.agent.max_search_queries', 4);
 
+            // Cost rationale: the plan is a cheap, mechanical transform — run it on
+            // the cheap planner model; the strong default model is saved for analysis.
+            $plannerModel = config("sourcing.llm.{$providerKey}.planner_model");
+
             $planResponse = $this->llm->chat(
                 $this->searchPlanPrompt($partText, $instructions, $maxQueries),
-                [
+                array_filter([
                     'system'      => 'You are a procurement search strategist. Respond with strict JSON only.',
                     'temperature' => 0.2,
                     'json_mode'   => true,
-                    // Output JSON is small, but Gemini 2.5 thinking tokens share the
-                    // output budget — budget generously so it is never truncated.
+                    // Output JSON is small, but thinking-token models share the output
+                    // budget — budget generously so it is never truncated.
                     'max_tokens'  => 800,
-                ]
+                    'model'       => $plannerModel,  // null for providers without a planner role → default
+                ], static fn ($v) => $v !== null)
             );
 
             // Normalize + guard + cap; throws if nothing usable (failure path handles it).
@@ -117,24 +124,46 @@ class SourcingAgentService
             }
 
             // 4. Persist the plan + raw results IMMEDIATELY — the paid search data
-            //    must survive even if the analysis call below fails.
+            //    must survive even if the extraction/analysis calls below fail.
+            //    'plan_model' records which model served the (cheap) planning call
+            //    — evaluation proof of the per-role model split.
             $run->raw_search = [
                 'search_plan' => $plan,
+                'plan_model'  => $planResponse->model,
                 'results'     => $rawResults,
             ];
             $run->save();
 
-            // 5. LLM call #2 — analyze the merged results into strict JSON, applying
-            //    the user's free-text instructions to selection/ordering/wording.
+            // 4b. EXTRACTION STAGE — pull full page content for the top-N merged
+            //     results so analysis reads real contact/price data, not snippets.
+            //     Tolerant: any failure leaves us snippet-only; NEVER fails the run.
+            $extractedText = $this->extractTopPages($mergedResults);
+
+            // Persist only the char counts per URL (not the full text) — keeps the
+            // row size sane while proving what fed analysis.
+            $run->raw_search = $run->raw_search + [
+                'extracted' => array_map('mb_strlen', $extractedText),
+            ];
+            $run->save();
+
+            // 5. LLM call #2 — analyze snippets (all results) + extracted text
+            //    (top-N) into strict, actionable JSON, applying the user's
+            //    free-text instructions to selection/ordering/wording.
             $analysisResponse = $this->llm->chat(
-                $this->analysisPrompt($partText, $mergedResults, $language, $instructions),
+                $this->analysisPrompt($partText, $mergedResults, $extractedText, $language, $instructions),
                 [
-                    'system'    => 'You are a procurement analyst. Respond with strict JSON only.',
-                    'json_mode' => true,
+                    'system'     => 'You are a procurement analyst. Respond with strict JSON only.',
+                    'json_mode'  => true,
+                    // Larger input (full pages) + the thinking-token lesson generalizes:
+                    // budget generously so structured output is never truncated.
+                    'max_tokens' => 2500,
                 ]
             );
 
             $parsed = $analysisResponse->json(); // throws on invalid JSON — fail loudly
+
+            // Record the analysis model too (evaluation proof of the per-role split).
+            $run->raw_search = $run->raw_search + ['analysis_model' => $analysisResponse->model];
 
             // 6. Success: store results and the summed token usage across both calls.
             $run->fill([
@@ -335,16 +364,77 @@ class SourcingAgentService
     }
 
     /**
-     * @param SearchResult[] $searchResults
+     * Extract full page content for the top-N merged results and cap each page.
+     * Returns url => capped-text for pages that extracted successfully.
+     *
+     * Failure-tolerant by contract: a wholesale extraction failure is logged
+     * and yields an empty map — analysis then proceeds snippet-only. This
+     * NEVER throws out of the run.
+     *
+     * @param  SearchResult[]  $mergedResults
+     * @return array<string, string>  url => extracted text (capped, non-empty only)
      */
-    private function analysisPrompt(string $partText, array $searchResults, string $language, string $instructions): string
+    private function extractTopPages(array $mergedResults): array
+    {
+        $topN     = (int) config('sourcing.agent.extract_top', 5);
+        $charCap  = (int) config('sourcing.agent.extract_chars_per_page', 4000);
+
+        $urls = [];
+        foreach ($mergedResults as $result) {
+            if ($result->url !== '') {
+                $urls[] = $result->url;
+            }
+            if (count($urls) >= $topN) {
+                break;
+            }
+        }
+
+        if ($urls === []) {
+            return [];
+        }
+
+        try {
+            $pages = $this->extractor->extract($urls);
+        } catch (Throwable $e) {
+            // Extraction is best-effort — a hard failure must not fail the run.
+            Log::warning('Sourcing page extraction failed wholesale; analysis proceeds snippet-only.', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+
+        $extracted = [];
+        foreach ($pages as $url => $content) {
+            if (! filled($content)) {
+                continue; // per-URL failure (null) — snippet-only for this page
+            }
+
+            $extracted[$url] = mb_substr((string) $content, 0, $charCap);
+        }
+
+        return $extracted;
+    }
+
+    /**
+     * @param SearchResult[]                $searchResults  ALL merged results (snippets)
+     * @param array<string, string>         $extractedText  url => full page text (top-N)
+     */
+    private function analysisPrompt(string $partText, array $searchResults, array $extractedText, string $language, string $instructions): string
     {
         $languageName = $language === 'en' ? 'English' : 'Persian (Farsi)';
 
         $resultsText = '';
         foreach ($searchResults as $i => $r) {
             $n = $i + 1;
-            $resultsText .= "{$n}. {$r->title}\n   URL: {$r->url}\n   {$r->snippet}\n\n";
+            $resultsText .= "[{$n}] {$r->title}\n    URL: {$r->url}\n    Snippet: {$r->snippet}\n";
+
+            if (isset($extractedText[$r->url])) {
+                $resultsText .= "    Extracted page text (authoritative — read contact/price ONLY from here or the snippet above):\n";
+                $resultsText .= '    """' . "\n" . $extractedText[$r->url] . "\n" . '    """' . "\n";
+            }
+
+            $resultsText .= "\n";
         }
         $resultsText = trim($resultsText);
 
@@ -353,7 +443,7 @@ class SourcingAgentService
         }
 
         return implode("\n", [
-            'You are analyzing web search results to identify suppliers for a part-sourcing request.',
+            'You are analyzing web search results (snippets, plus full extracted page text for some) to identify suppliers for a part-sourcing request.',
             '',
             'Part to source:',
             $partText,
@@ -364,20 +454,28 @@ class SourcingAgentService
             'Search results:',
             $resultsText,
             '',
-            'From the search results, identify the most relevant suppliers for this part. Respond with STRICT JSON in exactly this shape:',
+            'From the results, identify the most relevant suppliers for this part. Respond with STRICT JSON in exactly this shape:',
             '',
             '{',
             '  "suppliers": [',
-            '    {"name": "...", "url": "...", "relevance": "...", "price_hint": "... or null"}',
+            '    {',
+            '      "name": "...",',
+            '      "url": "...",',
+            '      "relevance": "...",',
+            '      "contact": { "email": null, "phone": null, "whatsapp": null },',
+            '      "price":   { "value": null, "currency": null, "note": null }',
+            '    }',
             '  ],',
             '  "summary": "..."',
             '}',
             '',
             'Rules:',
-            '- Apply the user instructions above when SELECTING and ORDERING suppliers and when writing "relevance" and "summary" — e.g. if they ask for the lowest price, prefer/rank cheaper options and note price; if they name a market or site, favor matching suppliers.',
-            '- "name" and "url" must be copied exactly as found in the search results (do NOT translate them).',
-            "- \"relevance\", \"price_hint\", and \"summary\" MUST be written in {$languageName}.",
-            '- Use null (not a string) for "price_hint" when no price information is available.',
+            '- Apply the user instructions above when SELECTING and ORDERING suppliers and when writing "relevance" and "summary" — e.g. if they ask for the lowest price, prefer/rank cheaper options; if they name a market or site, favor matching suppliers.',
+            '- "name" and "url" must be copied exactly as found in the results (do NOT translate them).',
+            '- ANTI-HALLUCINATION — this is critical: fill "email", "phone", "whatsapp", "price.value" and "price.currency" ONLY with values that appear LITERALLY in the provided snippet or extracted page text for that supplier. If a value is not literally present, it MUST be null. NEVER infer, guess, complete, or fabricate a contact detail or a price. When in doubt, use null.',
+            '- "price.value" is a plain number (no currency symbol, no thousands separators); "price.currency" is the currency code/symbol as written (e.g. "USD", "EUR", "€"). "price.note" carries qualifiers found in the text (e.g. "per 10 pcs", "MOQ 100", "ex-works").',
+            '- "email" is a bare address; "phone" and "whatsapp" are phone numbers as written. Use null for any that are absent.',
+            "- \"relevance\", \"summary\", and \"price.note\" MUST be written in {$languageName}. Contact values, emails, phone numbers, prices, currencies, names and URLs are copied verbatim and never translated.",
             '- Return valid JSON only: no markdown code fences, no commentary.',
         ]);
     }

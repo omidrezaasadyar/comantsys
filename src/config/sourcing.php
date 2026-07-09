@@ -20,6 +20,16 @@ return [
             'base_url' => 'https://generativelanguage.googleapis.com/v1beta',
             'timeout'  => 60,
         ],
+
+        'openai' => [
+            'api_key'  => env('OPENAI_API_KEY'),
+            'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+            'timeout'  => 60,
+            // Per-role models: strong model for the analysis call (accuracy),
+            // cheap model for the mechanical planning call (cost).
+            'model'         => env('SOURCING_LLM_MODEL', 'gpt-4.1'),
+            'planner_model' => env('SOURCING_LLM_PLANNER_MODEL', 'gpt-4o-mini'),
+        ],
     ],
 
     'search' => [
@@ -47,6 +57,11 @@ return [
     'agent' => [
         'output_language'    => env('SOURCING_OUTPUT_LANGUAGE', 'fa'),  // 'fa' | 'en'
         'max_search_queries' => 4,   // hard cap on planned queries per run (= Tavily credits/run)
+
+        // Page-extraction stage: pull full page content for the top-N merged
+        // results so analysis can read real contact/price data, not snippets.
+        'extract_top'             => 5,     // pages fetched via Tavily /extract (5 basic = 1 credit)
+        'extract_chars_per_page'  => 4000,  // cap per page fed to analysis (keeps the prompt bounded)
     ],
 
     'queue' => [

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Sourcing\Contracts\ExtractsPagesInterface;
 use App\Services\Sourcing\Contracts\LlmProviderInterface;
 use App\Services\Sourcing\Contracts\OcrProviderInterface;
 use App\Services\Sourcing\Contracts\SearchProviderInterface;
@@ -16,7 +17,7 @@ class SourcingServiceProvider extends ServiceProvider
      */
     private const LLM_PROVIDERS = [
         'gemini' => \App\Services\Sourcing\Providers\GeminiProvider::class,
-        // 'openai'    => \App\Services\Sourcing\Providers\OpenAiProvider::class,
+        'openai' => \App\Services\Sourcing\Providers\OpenAiProvider::class,
         // 'anthropic' => \App\Services\Sourcing\Providers\AnthropicProvider::class,
     ];
 
@@ -37,6 +38,21 @@ class SourcingServiceProvider extends ServiceProvider
 
         $this->app->singleton(SearchProviderInterface::class, function ($app) {
             return $app->make($this->resolveClass('search', self::SEARCH_PROVIDERS));
+        });
+
+        // Page extraction rides on the search provider when it supports it (Tavily
+        // implements both). Fail loud if the active search provider can't extract.
+        $this->app->singleton(ExtractsPagesInterface::class, function ($app) {
+            $provider = $app->make(SearchProviderInterface::class);
+
+            if (! $provider instanceof ExtractsPagesInterface) {
+                throw new InvalidArgumentException(
+                    'The active sourcing search provider [' . config('sourcing.search.provider')
+                    . '] does not support page extraction (ExtractsPagesInterface).'
+                );
+            }
+
+            return $provider;
         });
 
         $this->app->singleton(OcrProviderInterface::class, function ($app) {

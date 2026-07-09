@@ -101,6 +101,11 @@ return [
     'supplier' => [
         'relevance'  => 'ارتباط',
         'price_hint' => 'قیمت (تخمینی)',
+        'contact'    => 'اطلاعات تماس',
+        'email'      => 'ایمیل',
+        'phone'      => 'تلفن',
+        'whatsapp'   => 'واتساپ',
+        'price'      => 'قیمت',
     ],
 
 ];
