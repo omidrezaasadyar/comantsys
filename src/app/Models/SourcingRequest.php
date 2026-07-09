@@ -11,6 +11,7 @@ class SourcingRequest extends Model
         'part_name',
         'part_number',
         'description',
+        'search_instructions',
         'status',
     ];
 

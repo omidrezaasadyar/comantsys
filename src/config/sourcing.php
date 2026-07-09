@@ -45,7 +45,8 @@ return [
     ],
 
     'agent' => [
-        'output_language' => env('SOURCING_OUTPUT_LANGUAGE', 'fa'),  // 'fa' | 'en'
+        'output_language'    => env('SOURCING_OUTPUT_LANGUAGE', 'fa'),  // 'fa' | 'en'
+        'max_search_queries' => 4,   // hard cap on planned queries per run (= Tavily credits/run)
     ],
 
     'queue' => [

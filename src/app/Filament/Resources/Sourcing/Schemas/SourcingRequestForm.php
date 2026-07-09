@@ -36,6 +36,12 @@ class SourcingRequestForm
                             ->rows(3)
                             ->columnSpanFull(),
 
+                        Textarea::make('search_instructions')
+                            ->label(__('sourcing.field.search_instructions'))
+                            ->helperText(__('sourcing.help.search_instructions'))
+                            ->rows(3)
+                            ->columnSpanFull(),
+
                         Select::make('status')
                             ->label(__('sourcing.field.request_status'))
                             ->options([
