@@ -16,6 +16,7 @@ class SourcingRun extends Model
         'search_provider',
         'results',
         'raw_search',
+        'ocr_context',
         'input_tokens',
         'output_tokens',
         'error',
@@ -33,6 +34,7 @@ class SourcingRun extends Model
         return [
             'results'     => 'array',
             'raw_search'  => 'array',
+            'ocr_context' => 'array',
             'started_at'  => 'datetime',
             'finished_at' => 'datetime',
         ];
