@@ -4,7 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +16,7 @@ use Illuminate\Support\Facades\Storage;
 
 #[Fillable(['name', 'email', 'password', 'avatar_path'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements HasAvatar
+class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -27,6 +29,16 @@ class User extends Authenticatable implements HasAvatar
                 Storage::disk('local')->delete($user->avatar_path);
             }
         });
+    }
+
+    /**
+     * Panel access. Every user in this system is an operator of the admin
+     * panel, so access is unconditional — tighten here (flag / role / email)
+     * when non-admin users are introduced.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
     }
 
     /**
