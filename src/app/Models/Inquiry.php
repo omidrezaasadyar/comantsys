@@ -10,6 +10,9 @@ class Inquiry extends Model
 {
     protected $fillable = [
         'customer_id',
+        'company_id',
+        'direction',
+        'calendar',
         'inquiry_number',
         'inquiry_date',
         'response_date',
@@ -26,6 +29,11 @@ class Inquiry extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function items(): HasMany

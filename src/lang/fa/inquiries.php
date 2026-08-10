@@ -21,6 +21,8 @@ return [
     // ── برچسب فیلدها و ستون‌ها ──
     'field' => [
         'customer'         => 'مشتری',
+        'company'          => 'شرکت استعلام‌دهنده (ما)',
+        'direction'        => 'نوع استعلام',
         'inquiry_number'   => 'شمارهٔ استعلام',
         'inquiry_date'     => 'تاریخ استعلام',
         'response_date'    => 'تاریخ پاسخ',
@@ -53,6 +55,12 @@ return [
         'sent'      => 'ارسال‌شده',
         'delivered' => 'تحویل‌شده',
         'cancelled' => 'لغوشده',
+    ],
+
+    // ── جهت استعلام (نشان و فیلتر) ──
+    'direction' => [
+        'inbound'  => 'دریافتی',
+        'outbound' => 'ارسالی',
     ],
 
     // ── واحدها (منبع یگانه: InquiryItem::units) ──

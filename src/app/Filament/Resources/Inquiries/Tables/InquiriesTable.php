@@ -28,6 +28,18 @@ class InquiriesTable
                     ->searchable()
                     ->sortable(),
 
+                // جهت استعلام: دریافتی / ارسالی
+                TextColumn::make('direction')
+                    ->label(__('inquiries.field.direction'))
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => __('inquiries.direction')[$state] ?? $state)
+                    ->color(fn (string $state): string => match ($state) {
+                        'inbound'  => 'success',
+                        'outbound' => 'info',
+                        default    => 'gray',
+                    })
+                    ->sortable(),
+
                 TextColumn::make('inquiry_date')
                     ->label(__('inquiries.field.inquiry_date'))
                     ->jalaliDate()
@@ -70,6 +82,10 @@ class InquiriesTable
                 SelectFilter::make('status')
                     ->label(__('inquiries.field.status'))
                     ->options(Inquiry::statuses()),
+
+                SelectFilter::make('direction')
+                    ->label(__('inquiries.field.direction'))
+                    ->options(__('inquiries.direction')),
             ])
             ->recordActions([
                 EditAction::make(),
