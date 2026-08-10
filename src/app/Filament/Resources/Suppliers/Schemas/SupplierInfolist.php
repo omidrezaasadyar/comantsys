@@ -1,83 +1,47 @@
 <?php
+
 namespace App\Filament\Resources\Suppliers\Schemas;
 
 use Filament\Infolists\Components\TextEntry;
-use Filament\Schemas\Components\Icon;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 
 class SupplierInfolist
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema
-            ->columns([
-                'default' => 1,
-                'md' => 2,
-                'xl' => 4,
-            ])
-            ->inlineLabel()
             ->components([
-                Section::make("اطلاعات اصلی")
-                    ->beforeLabel(Icon::make(Heroicon::OutlinedInformationCircle))
-                    ->columns(1)
+                Section::make('اطلاعات اصلی')
+                    ->columns(2)
                     ->schema([
-                        TextEntry::make("name")
-                            ->label("نام"),
-                        TextEntry::make("is_active")
-                            ->label("وضعیت")
+                        TextEntry::make('name')->label('نام تأمین‌کننده')->columnSpanFull(),
+                        // TextEntry has no boolean() in this version (IconEntry only),
+                        // so the flag is rendered as a formatted badge instead.
+                        TextEntry::make('is_active')
+                            ->label('فعال')
                             ->badge()
-                            ->formatStateUsing(fn (bool $state): string => $state ? "فعال" : "غیرفعال")
-                            ->color(fn (bool $state): string => $state ? "success" : "gray"),
-                            TextEntry::make("parts.part_name")
-                            ->label("قطعات")
-                            ->badge()
-                            ->placeholder("-"),
+                            ->formatStateUsing(fn (bool $state): string => $state ? 'بله' : 'خیر')
+                            ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
                     ]),
-                Section::make("موقعیت مکانی")
-                    ->beforeLabel(Icon::make(Heroicon::OutlinedMapPin))
-                    ->columns(1)
+                Section::make('موقعیت مکانی')
+                    ->columns(2)
                     ->schema([
-                        TextEntry::make("country")
-                            ->label("کشور")
-                            ->placeholder("-"),
-                        TextEntry::make("city")
-                            ->label("شهر")
-                            ->placeholder("-"),
-                        TextEntry::make("address")
-                            ->label("نشانی")
-                            ->inlineLabel(false)
-                            ->extraAttributes(['class' => 'entry-fullwidth'])
-                            ->placeholder("-"),
+                        TextEntry::make('country')->label('کشور'),
+                        TextEntry::make('city')->label('شهر'),
+                        TextEntry::make('address')->label('نشانی')->columnSpanFull(),
                     ]),
-                Section::make("راه‌های ارتباطی")
-                    ->beforeLabel(Icon::make(Heroicon::OutlinedPhone))
-                    ->columns(1)
+                Section::make('راه‌های ارتباطی')
+                    ->columns(2)
                     ->schema([
-                        TextEntry::make("phone")
-                            ->label("تلفن")
-                            ->placeholder("-"),
-                        TextEntry::make("email")
-                            ->label("ایمیل")
-                            ->placeholder("-"),
-                        TextEntry::make("website")
-                            ->label("وب‌سایت")
-                            ->placeholder("-"),
+                        TextEntry::make('phone')->label('تلفن'),
+                        TextEntry::make('email')->label('ایمیل'),
+                        TextEntry::make('website')->label('وب‌سایت')->columnSpanFull(),
                     ]),
-                Section::make("اطلاعات تکمیلی")
-                    ->beforeLabel(Icon::make(Heroicon::OutlinedDocumentText))
-                    ->columns(1)
+                Section::make('اطلاعات تکمیلی')
                     ->schema([
-                        TextEntry::make("tags")
-                            ->label("برچسب‌ها")
-                            ->placeholder("-"),
-                        TextEntry::make("notes")
-                            ->label("یادداشت‌ها")
-                            ->inlineLabel(false)
-                            ->extraAttributes(['class' => 'entry-fullwidth'])
-                            ->placeholder("-"),
-
+                        TextEntry::make('tags')->label('برچسب‌ها'),
+                        TextEntry::make('notes')->label('یادداشت‌ها')->columnSpanFull(),
                     ]),
             ]);
     }
