@@ -133,7 +133,7 @@
     $sumNet = 0; $sumVat = 0; $sumTotal = 0;
     $rate = (float) $invoice->vat_rate;
     $isIRR = $invoice->currency === 'IRR';
-    $curLabel = $isIRR ? 'ریال' : $invoice->currency;
+    $curLabel = $invoice->currencyLabel();
   @endphp
 
   <table class="items">

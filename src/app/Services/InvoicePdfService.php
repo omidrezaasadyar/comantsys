@@ -13,7 +13,7 @@ class InvoicePdfService
         $invoice->load(['company', 'customer', 'items']);
 
         $totalInWords = $invoice->locale === 'fa'
-            ? NumberToWords::convert($invoice->grand_total) . ' ریال'
+            ? NumberToWords::convert($invoice->grand_total) . ' ' . $invoice->currencyLabel()
             : '';
 
         $logoData = self::imageToBase64($invoice->company?->logo_path);

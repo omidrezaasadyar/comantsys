@@ -74,6 +74,17 @@ class Invoice extends Model
         $this->grand_total = $subtotal + $vatAmount;
     }
 
+    public function currencyLabel(): string
+    {
+        return match ($this->currency) {
+            'EUR' => 'یورو',
+            'USD' => 'دلار',
+            'GBP' => 'پوند',
+            'IRR' => 'ریال',
+            default => $this->currency,
+        };
+    }
+
     protected static function booted(): void
     {
         // تولید شمارهٔ فاکتور هنگام ایجاد (اتمیک، فقط اگر خالی باشد)
