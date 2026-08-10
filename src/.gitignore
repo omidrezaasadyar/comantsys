@@ -25,3 +25,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Auto-generated project map (rebuild with: php artisan project:map)
+/PROJECT-MAP.md
