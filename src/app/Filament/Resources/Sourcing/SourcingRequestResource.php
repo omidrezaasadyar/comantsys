@@ -5,9 +5,11 @@ namespace App\Filament\Resources\Sourcing;
 use App\Filament\Resources\Sourcing\Pages\CreateSourcingRequest;
 use App\Filament\Resources\Sourcing\Pages\EditSourcingRequest;
 use App\Filament\Resources\Sourcing\Pages\ListSourcingRequests;
+use App\Filament\Resources\Sourcing\Pages\ViewSourcingRequest;
 use App\Filament\Resources\Sourcing\RelationManagers\AttachmentsRelationManager;
 use App\Filament\Resources\Sourcing\RelationManagers\RunsRelationManager;
 use App\Filament\Resources\Sourcing\Schemas\SourcingRequestForm;
+use App\Filament\Resources\Sourcing\Schemas\SourcingRequestInfolist;
 use App\Filament\Resources\Sourcing\Tables\SourcingRequestsTable;
 use App\Models\SourcingRequest;
 use App\Models\SourcingRun;
@@ -69,6 +71,11 @@ class SourcingRequestResource extends Resource
         return SourcingRequestForm::configure($schema);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return SourcingRequestInfolist::configure($schema);
+    }
+
     public static function table(Table $table): Table
     {
         return SourcingRequestsTable::configure($table);
@@ -87,6 +94,7 @@ class SourcingRequestResource extends Resource
         return [
             'index' => ListSourcingRequests::route('/'),
             'create' => CreateSourcingRequest::route('/create'),
+            'view' => ViewSourcingRequest::route('/{record}'),
             'edit' => EditSourcingRequest::route('/{record}/edit'),
         ];
     }
