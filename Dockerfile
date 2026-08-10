@@ -57,6 +57,11 @@ WORKDIR /var/www/html
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Claude Code CLI (dev tooling) — installed as root so it lands in
+# global /usr/bin, which appuser already has on PATH.
+RUN npm install -g @anthropic-ai/claude-code \
+    && npm cache clean --force
+
 # ساخت کاربر هم‌UID با میزبان تا فایل‌های ساخته‌شده مال کاربر میزبان باشند
 ARG UID=1000
 ARG GID=1000
