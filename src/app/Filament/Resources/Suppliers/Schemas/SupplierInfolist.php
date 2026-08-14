@@ -13,9 +13,11 @@ class SupplierInfolist
         return $schema
             ->components([
                 Section::make('اطلاعات اصلی')
-                    ->columns(2)
+                    ->contained(false)
+                    ->divided()
+                    ->inlineLabel()
                     ->schema([
-                        TextEntry::make('name')->label('نام تأمین‌کننده')->columnSpanFull(),
+                        TextEntry::make('name')->label('نام تأمین‌کننده')->placeholder('—')->columnSpanFull(),
                         // TextEntry has no boolean() in this version (IconEntry only),
                         // so the flag is rendered as a formatted badge instead.
                         TextEntry::make('is_active')
@@ -25,23 +27,38 @@ class SupplierInfolist
                             ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
                     ]),
                 Section::make('موقعیت مکانی')
-                    ->columns(2)
+                    ->contained(false)
+                    ->divided()
+                    ->inlineLabel()
                     ->schema([
-                        TextEntry::make('country')->label('کشور'),
-                        TextEntry::make('city')->label('شهر'),
-                        TextEntry::make('address')->label('نشانی')->columnSpanFull(),
+                        TextEntry::make('country')->label('کشور')->placeholder('—'),
+                        TextEntry::make('city')->label('شهر')->placeholder('—'),
+                        TextEntry::make('address')
+                            ->label('نشانی')
+                            ->placeholder('—')
+                            ->inlineLabel(false)
+                            ->columnSpanFull(),
                     ]),
                 Section::make('راه‌های ارتباطی')
-                    ->columns(2)
+                    ->contained(false)
+                    ->divided()
+                    ->inlineLabel()
                     ->schema([
-                        TextEntry::make('phone')->label('تلفن'),
-                        TextEntry::make('email')->label('ایمیل'),
-                        TextEntry::make('website')->label('وب‌سایت')->columnSpanFull(),
+                        TextEntry::make('phone')->label('تلفن')->placeholder('—'),
+                        TextEntry::make('email')->label('ایمیل')->placeholder('—'),
+                        TextEntry::make('website')->label('وب‌سایت')->placeholder('—'),
                     ]),
                 Section::make('اطلاعات تکمیلی')
+                    ->contained(false)
+                    ->divided()
+                    ->inlineLabel()
                     ->schema([
-                        TextEntry::make('tags')->label('برچسب‌ها'),
-                        TextEntry::make('notes')->label('یادداشت‌ها')->columnSpanFull(),
+                        TextEntry::make('tags')->label('برچسب‌ها')->placeholder('—'),
+                        TextEntry::make('notes')
+                            ->label('یادداشت‌ها')
+                            ->placeholder('—')
+                            ->inlineLabel(false)
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

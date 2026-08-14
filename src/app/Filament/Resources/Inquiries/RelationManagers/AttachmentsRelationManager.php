@@ -57,6 +57,17 @@ class AttachmentsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            // RelationManager::makeTable() presets the heading to
+            // static::getTitle() (RelationManager.php:314). On the Inquiry view
+            // this table sits inside a panel whose own header strip already
+            // reads «پیوست‌ها», so the inner heading printed it twice. table()
+            // runs after makeTable() (InteractsWithTable.php:47), so clearing
+            // it here wins. getTitle() itself is left alone — it still names
+            // the relation manager everywhere else Filament asks for a title.
+            // The table's header block still renders for «افزودن پیوست»:
+            // tables index.blade.php:230 keys on `$heading || $description ||
+            // $headerActions`, and only the title div inside is skipped.
+            ->heading(null)
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('title')

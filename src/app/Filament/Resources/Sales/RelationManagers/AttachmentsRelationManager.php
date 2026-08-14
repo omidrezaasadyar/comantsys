@@ -51,6 +51,14 @@ class AttachmentsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            // RelationManager::makeTable() presets the heading to static::$title
+            // (RelationManager.php:313). On the Sale view this table sits inside
+            // a panel whose own header strip already reads «مستندات», so the
+            // inner heading would print it twice. table() runs after
+            // makeTable() (InteractsWithTable.php:47), so clearing it here wins.
+            // The header block still renders for «افزودن مستند», which is a
+            // headerAction, not the heading (tables index.blade.php:232).
+            ->heading(null)
             ->recordTitleAttribute('file')
             ->columns([
                 TextColumn::make('file')

@@ -2,8 +2,7 @@
 
 namespace App\Filament\Resources\Sales\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use App\Filament\Actions\DeleteSelectedBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -11,11 +10,27 @@ use Filament\Tables\Table;
 
 class SalesTable
 {
+    /**
+     * Column visibility rules (Filament v5, Columns\Concerns\CanBeToggled):
+     *
+     *  - `$isToggleable` defaults to FALSE, so a column with no ->toggleable()
+     *    call is LOCKED: the column manager lists it checked and disabled, and
+     *    the user cannot switch it off (HasColumnManager.php:237-239 →
+     *    'isToggled' => true, 'isToggleable' => false).
+     *  - ->toggleable() is toggleable(true, isToggledHiddenByDefault: false),
+     *    i.e. hideable but still shown by default.
+     *  - ->toggleable(isToggledHiddenByDefault: true) is hideable and hidden
+     *    until the user turns it on.
+     *
+     * Locked here: نام قلم · مشتری · تاریخ فروش · سود.
+     * Column order and default visibility are unchanged.
+     */
     public static function configure(Table $table): Table
     {
         return $table
             ->defaultSort('sale_date', 'desc')
             ->columns([
+                // locked
                 TextColumn::make('item_name')
                     ->label('نام قلم')
                     ->searchable()
@@ -24,13 +39,16 @@ class SalesTable
                 TextColumn::make('supplier.name')
                     ->label('تأمین‌کننده')
                     ->searchable()
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->toggleable(),
 
+                // locked
                 TextColumn::make('customer_name')
                     ->label('مشتری')
                     ->searchable()
                     ->placeholder('—'),
 
+                // locked
                 TextColumn::make('sale_date')
                     ->label('تاریخ فروش')
                     ->date()
@@ -39,35 +57,42 @@ class SalesTable
                 TextColumn::make('currency')
                     ->label('ارز')
                     ->badge()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('quantity')
                     ->label('تعداد')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('purchase_unit_price')
                     ->label('خرید واحد')
                     ->money(fn ($record) => $record->currency)
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('sale_unit_price')
                     ->label('فروش واحد')
                     ->money(fn ($record) => $record->currency)
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('revenue')
                     ->label('درآمد')
                     ->money(fn ($record) => $record->currency)
                     ->color('warning')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('total_cost')
                     ->label('هزینهٔ کل')
                     ->money(fn ($record) => $record->currency)
                     ->color('danger')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
+                // locked
                 TextColumn::make('profit')
                     ->label('سود')
                     ->money(fn ($record) => $record->currency)
@@ -108,9 +133,7 @@ class SalesTable
                 EditAction::make(),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                DeleteSelectedBulkAction::make(),
             ]);
     }
 }

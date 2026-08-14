@@ -66,7 +66,6 @@
 .dark .fi-ta,
 .dark .fi-ta-ctn {
     background-color: #1E2740 !important;
-    overflow: hidden;
 }
 .dark .fi-ta-header,
 .dark .fi-ta-header-cell,
@@ -77,10 +76,18 @@
 .dark .fi-ta-table thead {
     background-color: rgba(30, 41, 59, 0.5) !important;
 }
+/* گردی گوشه‌ها بله، بریدن محتوا نه.
+   فیلامنت عمداً فقط جدولِ بدون هدر را می‌بُرد:
+       .fi-ta-ctn:not(.fi-ta-ctn-with-header) { overflow: hidden }
+       (vendor/filament/tables/resources/css/container.css:4-6)
+   چون پنل‌های کرکره‌ایِ نوار ابزار (مدیریت ستون‌ها، فیلترها) به‌صورت inline
+   داخل همین ظرف رندر می‌شوند — نه teleport (dropdown/index.blade.php، پیش‌فرض
+   teleport=false). هر `overflow: hidden` بدون قید، آن پنل‌ها را از لبهٔ پایینِ
+   جدول قیچی می‌کند؛ ناحیهٔ بریده‌شده نه دیده می‌شود و نه کلیک می‌پذیرد.
+   پس قاعدهٔ شرطیِ خود فیلامنت را دست‌نخورده می‌گذاریم. */
 .dark .fi-ta-ctn,
 .dark .fi-ta {
     border-radius: 0.75rem;
-    overflow: hidden;
 }
 /* ============================================================
    صفحهٔ لاگین — تصویر تمام‌صفحه + کارت شناور

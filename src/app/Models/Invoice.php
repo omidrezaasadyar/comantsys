@@ -26,6 +26,13 @@ class Invoice extends Model
         'grand_total',
         'template',
         'notes',
+        // پیگیری ارسال / تأیید / بازنگری
+        'send_status',
+        'approval_status',
+        'is_revised',
+        'sent_at',
+        'revised_at',
+        'recipient_person',
     ];
 
     protected $casts = [
@@ -35,6 +42,9 @@ class Invoice extends Model
         'subtotal'     => 'decimal:2',
         'vat_amount'   => 'decimal:2',
         'grand_total'  => 'decimal:2',
+        'sent_at'      => 'date',
+        'revised_at'   => 'date',
+        'is_revised'   => 'boolean',
     ];
 
     public function company(): BelongsTo
@@ -85,6 +95,65 @@ class Invoice extends Model
             'IRR' => 'ریال',
             default => $this->currency,
         };
+    }
+
+    /**
+     * برچسب فارسی وضعیت ارسال.
+     *
+     * ستون در دیتابیس string ساده است (نه enum بومی)، پس این نگاشت تنها منبعِ
+     * حقیقت برچسب‌هاست — همان الگوی Inquiry::statuses(). برخلاف Inquiry که
+     * برچسب‌هایش از lang/fa/inquiries.php می‌آید، منبع Invoice هنوز i18n نشده و
+     * رشته‌هایش مثل currencyLabel() این‌جا فارسی نوشته می‌شوند.
+     *
+     * @return array<string, string>
+     */
+    public static function sendStatuses(): array
+    {
+        return [
+            'not_sent' => 'ارسال‌نشده',
+            'sent'     => 'ارسال‌شده',
+        ];
+    }
+
+    /**
+     * رنگ نشان (badge) هر وضعیت ارسال.
+     *
+     * @return array<string, string>
+     */
+    public static function sendStatusColors(): array
+    {
+        return [
+            'not_sent' => 'gray',
+            'sent'     => 'success',
+        ];
+    }
+
+    /**
+     * برچسب فارسی وضعیت تأیید.
+     *
+     * @return array<string, string>
+     */
+    public static function approvalStatuses(): array
+    {
+        return [
+            'pending'  => 'در انتظار',
+            'approved' => 'تأییدشده',
+            'rejected' => 'ردشده',
+        ];
+    }
+
+    /**
+     * رنگ نشان (badge) هر وضعیت تأیید.
+     *
+     * @return array<string, string>
+     */
+    public static function approvalStatusColors(): array
+    {
+        return [
+            'pending'  => 'warning',
+            'approved' => 'success',
+            'rejected' => 'danger',
+        ];
     }
 
     protected static function booted(): void

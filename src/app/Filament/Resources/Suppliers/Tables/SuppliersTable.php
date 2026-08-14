@@ -2,8 +2,7 @@
 
 namespace App\Filament\Resources\Suppliers\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use App\Filament\Actions\DeleteSelectedBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
@@ -80,9 +79,7 @@ class SuppliersTable
                 EditAction::make(),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                DeleteSelectedBulkAction::make(),
             ]);
     }
 }

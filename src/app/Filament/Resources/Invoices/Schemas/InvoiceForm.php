@@ -2,12 +2,15 @@
 
 namespace App\Filament\Resources\Invoices\Schemas;
 
+use App\Models\Invoice;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
@@ -131,6 +134,57 @@ class InvoiceForm
                             ->native(false)
                             ->displayFormat('Y/m/d')
                             ->visible(fn ($get) => $get('locale') === 'en'),
+                    ]),
+
+                // فاز ۲ — پیگیری ارسال / تأیید / بازنگری.
+                //
+                // گزینه‌های هر Select فقط از نگاشت‌های مدل می‌آید، نه از آرایهٔ
+                // درجا: چون ستون‌ها در PostgreSQL رشتهٔ ساده‌اند و CHECK constraint
+                // ندارند، همین فهرست تنها لایهٔ اعتبارسنجی مقدار است و باید یک
+                // منبع داشته باشد.
+                Section::make('وضعیت و ارسال')
+                    ->columnSpanFull()
+                    ->columns(3)
+                    ->schema([
+                        Select::make('send_status')
+                            ->label('وضعیت ارسال')
+                            ->options(Invoice::sendStatuses())
+                            ->default('not_sent')
+                            ->required()
+                            ->native(false)
+                            // live() لازم است تا «تاریخ ارسال» بلافاصله با تغییر
+                            // این مقدار ظاهر/پنهان شود، نه بعد از ذخیره.
+                            ->live(),
+
+                        Select::make('approval_status')
+                            ->label('وضعیت تأیید')
+                            ->options(Invoice::approvalStatuses())
+                            ->default('pending')
+                            ->required()
+                            ->native(false),
+
+                        TextInput::make('recipient_person')
+                            ->label('شخص دریافت‌کننده')
+                            ->maxLength(255),
+
+                        // ->jalali() ماکرویی است که ariaieboy/filament-jalali روی
+                        // DatePicker ثبت می‌کند (FilamentJalaliServiceProvider.php:32):
+                        // فقط view و displayFormat و firstDayOfWeek را عوض می‌کند،
+                        // پس state همچنان تاریخ میلادی است و میلادی در DB می‌نشیند.
+                        DatePicker::make('sent_at')
+                            ->label('تاریخ ارسال')
+                            ->jalali()
+                            ->visible(fn (Get $get): bool => $get('send_status') === 'sent'),
+
+                        Toggle::make('is_revised')
+                            ->label('ویرایش پس از ارسال')
+                            ->default(false)
+                            ->live(),
+
+                        DatePicker::make('revised_at')
+                            ->label('تاریخ ویرایش')
+                            ->jalali()
+                            ->visible(fn (Get $get): bool => (bool) $get('is_revised')),
                     ]),
 
                 Section::make(fn ($get) => 'کالا و خدمات (' . self::currencyLabel($get('currency')) . ')')

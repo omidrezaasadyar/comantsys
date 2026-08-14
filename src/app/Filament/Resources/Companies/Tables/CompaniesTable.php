@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\Companies\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use App\Filament\Actions\DeleteSelectedBulkAction;
+use App\Filament\Resources\Companies\CompanyResource;
+use App\Models\Company;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\ImageColumn;
@@ -11,7 +12,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Auth\Access\Response;
 
 class CompaniesTable
 {
@@ -74,7 +75,9 @@ class CompaniesTable
                 EditAction::make(),
                 DeleteAction::make()
                     ->before(function ($record, $action) {
-                        if ($record->invoices()->withTrashed()->exists()) {
+                        // Invoice no longer uses SoftDeletes, so withTrashed()
+                        // would throw BadMethodCallException here.
+                        if ($record->invoices()->exists()) {
                             Notification::make()
                                 ->title('امکان حذف وجود ندارد')
                                 ->body('این شرکت دارای فاکتور است و قابل حذف نیست. ابتدا فاکتورهای مرتبط را مدیریت کنید.')
@@ -86,24 +89,27 @@ class CompaniesTable
                     }),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->before(function (Collection $records, $action) {
-                            $withInvoices = $records->filter(
-                                fn ($record) => $record->invoices()->withTrashed()->exists()
-                            );
+                // Guarded resource: a company that has invoices must not be
+                // deleted. The authoritative guard stays on the model
+                // (Company::booted() → deleting → CompanyHasInvoicesException);
+                // this per-record authorization runs the same check up front so
+                // guarded rows are skipped with a readable Persian reason
+                // instead of surfacing as anonymous processing failures.
+                // Failing per row — not cancelling the whole batch — is
+                // deliberate: unguarded companies in the same selection are
+                // still deleted.
+                DeleteSelectedBulkAction::make()
+                    ->authorizeIndividualRecords(function (Company $record): Response {
+                        $response = CompanyResource::getDeleteAuthorizationResponse($record);
 
-                            if ($withInvoices->isNotEmpty()) {
-                                Notification::make()
-                                    ->title('امکان حذف وجود ندارد')
-                                    ->body('برخی از شرکت‌های انتخاب‌شده دارای فاکتور هستند و قابل حذف نیستند: ' . $withInvoices->pluck('name')->implode('، '))
-                                    ->danger()
-                                    ->send();
+                        if (! $response->allowed()) {
+                            return $response;
+                        }
 
-                                $action->cancel();
-                            }
-                        }),
-                ]),
+                        return $record->invoices()->exists()
+                            ? Response::deny('«' . $record->name . '» دارای فاکتور است و قابل حذف نیست.')
+                            : Response::allow();
+                    }),
             ]);
     }
 }
