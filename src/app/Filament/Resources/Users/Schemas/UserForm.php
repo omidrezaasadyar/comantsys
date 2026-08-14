@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Users\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
@@ -42,6 +43,12 @@ class UserForm
 
                 Section::make('دسترسی')
                     ->schema([
+                        Toggle::make('is_portal_user')
+                            ->label(__('users.is_portal_user.label'))
+                            ->helperText(__('users.is_portal_user.helper'))
+                            ->default(false)
+                            ->inline(false),
+
                         Select::make('roles')
                             ->label('نقش‌ها')
                             ->relationship('roles', 'name')

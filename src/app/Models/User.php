@@ -15,7 +15,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'avatar_path'])]
+#[Fillable(['name', 'email', 'password', 'avatar_path', 'is_portal_user'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
@@ -33,13 +33,29 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     }
 
     /**
-     * Panel access. Every user in this system is an operator of the admin
-     * panel, so access is unconditional — tighten here (flag / role / email)
-     * when non-admin users are introduced.
+     * Panel access, decided per panel.
+     *
+     * The two audiences are mutually exclusive: a portal user belongs to the
+     * 'portal' panel and nowhere else; everyone else belongs to the operator
+     * panels (admin, and any other panel added later).
+     *
+     * There is deliberately NO super_admin bypass — is_portal_user is absolute,
+     * so a portal account can never reach the admin panel by holding a role.
+     *
+     * The 'portal' branch is dormant until that panel provider is registered;
+     * the default branch is live now. This method must keep returning true for
+     * operators because APP_ENV=production makes Filament enforce FilamentUser.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        // (bool) is a type guard, not a policy change: the attribute is null on an
+        // instance whose column was never hydrated (a just-created model, or a
+        // partial select), and a bare null would break the bool return type.
+        // Null therefore reads as "not a portal user" on both branches.
+        return match ($panel->getId()) {
+            'portal' => (bool) $this->is_portal_user,
+            default  => ! $this->is_portal_user,
+        };
     }
 
     /**
@@ -63,6 +79,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_portal_user' => 'boolean',
         ];
     }
 }
