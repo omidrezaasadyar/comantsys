@@ -124,7 +124,20 @@ A Persian-language internal corporate management system for running operations a
 - Not just `git pull`. Order: backup prod DB → `git pull` → run the Shield migration → generate permissions → assign `super_admin` on prod → `optimize:clear`.
 
 **Security / infra:**
-- **Rotate the database password** — exposed in an earlier session; oldest open item.
+- **Rotate the database password** — exposed in an earlier session; oldest open item. Now higher priority — see «Customer Request Portal» below; the external login surface makes it urgent.
+
+**Customer Request Portal — open items & PROD deploy:**
+- **PROD deploy — do in this order, back up the prod DB first:**
+  - Apply the three portal migrations on prod **in order**: `is_portal_user` → `portal_requests` → `portal_request_attachments`. Timestamp order is load-bearing — the attachments FK needs `portal_requests` to exist first.
+  - Bake the uploads `.ini` into the **prod Dockerfile too** (`upload_max_filesize=6M`, `post_max_size=30M`, `max_file_uploads=20`), then rebuild + restart the prod container. The prod image is **separate**: rebuilding dev does not cover it. Until this lands, PHP rejects oversized uploads before app validation runs, so the user sees a blank/419 failure instead of the Persian message.
+  - Confirm the reverse proxy (Caddy / xray) routes `/portal` on `portal.eisindustry.com`.
+  - `git pull` on prod → `php artisan optimize:clear` (routes and providers changed).
+- **Security — now higher priority, the portal adds an externally reachable login surface:**
+  - **Rotate the DB password before the portal ships.** Same item as «Security / infra» above, now doubly urgent: exposed in an earlier session, *and* its characters already break `parse_ini_file()` on `.env`.
+- **Still TO BUILD before prod is meaningful:**
+  - **View page** — customer sees the status boxes, the admin response, and their own files.
+  - **Admin-side `PortalRequest` resource** — internal review / approve / respond; Shield-gated; **no owner scope** (operators must see every request, unlike the portal resource).
+  - **Portal UI** — unified branded login matching the admin login (locked decision); tri-lingual en/fa/ar, incl. `lang/ar/portal_requests.php`; Gregorian dates for non-`fa` customers, driven by `Company.locale`.
 
 **Invoices module:**
 - PDF header alignment (national-ID / economic-code boxes vs. barcode).

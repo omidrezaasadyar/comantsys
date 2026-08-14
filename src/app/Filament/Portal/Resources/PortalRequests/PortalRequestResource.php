@@ -2,11 +2,14 @@
 
 namespace App\Filament\Portal\Resources\PortalRequests;
 
+use App\Filament\Portal\Resources\PortalRequests\Pages\CreatePortalRequest;
 use App\Filament\Portal\Resources\PortalRequests\Pages\ListPortalRequests;
+use App\Filament\Portal\Resources\PortalRequests\Schemas\PortalRequestForm;
 use App\Filament\Portal\Resources\PortalRequests\Tables\PortalRequestsTable;
 use App\Models\PortalRequest;
 use BackedEnum;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -29,18 +32,24 @@ class PortalRequestResource extends Resource
         return __('portal_requests.plural');
     }
 
+    public static function form(Schema $schema): Schema
+    {
+        return PortalRequestForm::configure($schema);
+    }
+
     public static function table(Table $table): Table
     {
         return PortalRequestsTable::configure($table);
     }
 
     /**
-     * List only — no create/view/edit pages exist yet.
+     * List + create. No view/edit page yet.
      */
     public static function getPages(): array
     {
         return [
             'index' => ListPortalRequests::route('/'),
+            'create' => CreatePortalRequest::route('/create'),
         ];
     }
 

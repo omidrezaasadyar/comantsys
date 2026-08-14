@@ -55,6 +55,7 @@ WORKDIR /var/www/html
 # Container start-time entrypoint (copied as root so it is executable & root-owned,
 # placed outside /var/www/html so the ./src bind mount cannot overlay it).
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY docker/php/zz-uploads.ini /usr/local/etc/php/conf.d/zz-uploads.ini
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Claude Code CLI (dev tooling) — installed as root so it lands in
