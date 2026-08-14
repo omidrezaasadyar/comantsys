@@ -17,6 +17,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | Shown in the footer of the login page. Both values are env-driven so the
+    | deploy pipeline can stamp them (e.g. write APP_UPDATED_AT from the release
+    | date / last commit date) without touching code. APP_UPDATED_AT must be a
+    | Y-m-d Gregorian date; the login page converts it to Jalali when the display
+    | language is Persian.
+    |
+    */
+
+    'version' => env('APP_VERSION', 'v2.4'),
+
+    'updated_at' => env('APP_UPDATED_AT', '2026-08-14'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
