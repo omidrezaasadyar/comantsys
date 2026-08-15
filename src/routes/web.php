@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\InquiryAttachmentController;
+use App\Http\Controllers\PortalRequestAttachmentController;
 use App\Http\Controllers\SourcingRequestAttachmentController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,4 +24,10 @@ Route::get('/inquiry-attachments/{attachment}/download', InquiryAttachmentContro
 Route::get('/sourcing-request-attachments/{attachment}/download', SourcingRequestAttachmentController::class)
     ->middleware('auth')
     ->name('sourcing-request-attachment.download');
+
+// Serve portal-request attachments from the private disk; auth-gated, plus an
+// ownership check inside the controller for portal (customer) accounts.
+Route::get('/portal-request-attachments/{attachment}/download', PortalRequestAttachmentController::class)
+    ->middleware('auth')
+    ->name('portal-request-attachment.download');
 

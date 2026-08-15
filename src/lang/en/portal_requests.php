@@ -75,4 +75,40 @@ return [
         'queued'       => 'Queued',
     ],
 
+    // ── Admin side (internal review desk) ──
+    // The keys above are shared (the model and both panels read them); this
+    // sub-tree belongs to the admin panel only, so the portal labels stay put.
+    'admin' => [
+
+        'nav'    => 'Portal requests',
+        'plural' => 'Portal requests',
+        'model'  => 'Portal request',
+        'review' => 'Review',
+
+        'section' => [
+            'submission'     => 'Submitted by the customer',
+            'customer_files' => 'Customer attachments',
+            'review'         => 'Review and response',
+        ],
+
+        'hint' => [
+            'submission' => 'Entered by the customer; not editable here.',
+            'review'     => 'Only this section is filled in by staff; the result is shown in the customer portal.',
+        ],
+
+        'field' => [
+            'admin_response'    => 'Staff response',
+            'admin_attachments' => 'Response attachments',
+        ],
+
+        'help' => [
+            'admin_response'    => 'The text the customer sees in their portal.',
+            'admin_attachments' => 'Files sent to the customer with the response. Up to 10 files, 10 MB each.',
+        ],
+
+        'empty' => [
+            'customer_attachments' => 'The customer attached no files.',
+        ],
+    ],
+
 ];
