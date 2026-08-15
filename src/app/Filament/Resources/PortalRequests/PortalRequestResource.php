@@ -35,13 +35,15 @@ class PortalRequestResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'request_number';
 
-    protected static string|UnitEnum|null $navigationGroup = 'فروش و تأمین';
-
     /**
-     * Sits after Invoices (5) and before Suppliers (10) in the group, which is
-     * roughly where the intake desk belongs in the sales/sourcing flow.
+     * The «درخواست‌ها» group previously held only the SubmitRequest and
+     * TrackRequests placeholder pages; this resource replaces both, and is now
+     * the group's sole member — so the group's existence depends on this line.
      */
-    protected static ?int $navigationSort = 6;
+    protected static string|UnitEnum|null $navigationGroup = 'درخواست‌ها';
+
+    /** Slot 1, freed by the two stubs this resource supersedes. */
+    protected static ?int $navigationSort = 1;
 
     public static function getModelLabel(): string
     {

@@ -80,9 +80,12 @@ return [
     // sub-tree belongs to the admin panel only, so the portal labels stay put.
     'admin' => [
 
-        'nav'    => 'Portal requests',
-        'plural' => 'Portal requests',
-        'model'  => 'Portal request',
+        // All three deliberately identical: sidebar (nav), list-page title
+        // (plural) and breadcrumb/singular (model) should read the same, so the
+        // menu and the page never show two different names for one thing.
+        'nav'    => 'Request Management',
+        'plural' => 'Request Management',
+        'model'  => 'Request Management',
         'review' => 'Review',
 
         'section' => [
