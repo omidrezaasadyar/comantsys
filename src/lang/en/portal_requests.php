@@ -98,6 +98,20 @@ return [
         'official_response' => 'Official response',
         'details'           => 'Request details',
         'no_attachments'    => 'No files attached.',
+
+        // ── Conversation ──
+        'conversation'       => 'Conversation',
+        'conversation_empty' => 'No messages exchanged yet.',
+        'sender_admin'       => 'EIS',
+        'sender_you'         => 'You',
+        'reply'              => 'Reply to staff',
+        'reply_submit'       => 'Send',
+        'reply_body'         => 'Message',
+        'reply_sent'         => 'Your message has been sent.',
+        // Staff have not written yet — they start the conversation.
+        'reply_awaiting'     => 'No reply is needed from you right now. If staff send a message, you will be able to answer here.',
+        // The file is closed (rejected or completed).
+        'reply_closed'       => 'This request is closed; no new messages can be sent.',
     ],
 
     'request_status' => [

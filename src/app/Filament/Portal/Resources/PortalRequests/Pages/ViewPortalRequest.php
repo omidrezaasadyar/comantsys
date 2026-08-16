@@ -5,6 +5,10 @@ namespace App\Filament\Portal\Resources\PortalRequests\Pages;
 use App\Filament\Concerns\RecordValueHelpers;
 use App\Filament\Portal\Resources\PortalRequests\PortalRequestResource;
 use App\Models\PortalRequest;
+use App\Models\PortalRequestMessage;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
@@ -63,6 +67,19 @@ class ViewPortalRequest extends ViewRecord
 
     protected string $placeholder = '—';
 
+    /** portal_request_messages.sender for a message written on this screen. */
+    public const SENDER_CUSTOMER = 'customer';
+
+    /** Sender whose presence opens the reply box (admin-initiated rule). */
+    public const SENDER_ADMIN = 'admin';
+
+    /**
+     * Statuses after which the conversation is over. Replying to a request that
+     * is already rejected or completed would put a message somewhere nobody is
+     * looking, so the box closes instead.
+     */
+    public const CLOSED_STATUSES = ['rejected', 'completed'];
+
     public function content(Schema $schema): Schema
     {
         return $schema->components([
@@ -97,6 +114,129 @@ class ViewPortalRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [];
+    }
+
+    // ── Conversation ───────────────────────────────────────────────────────
+
+    /**
+     * May the customer post a reply right now?
+     *
+     * Two conditions, both required:
+     *
+     *   a) Staff must have written at least once. The conversation is
+     *      ADMIN-INITIATED — a customer cannot open a thread out of nowhere,
+     *      because a request nobody has picked up yet has no one listening.
+     *   b) The request must not be in a final state. rejected/completed means
+     *      the file is closed.
+     *
+     * This is the single source of truth for the gate: the blade asks it to
+     * decide what to render, `replyAction()` asks it to decide visibility, and
+     * the action's own closure asks it AGAIN before writing (see below).
+     */
+    protected function canReply(): bool
+    {
+        $record = $this->getRecord();
+
+        if (in_array($record->request_status, self::CLOSED_STATUSES, true)) {
+            return false;
+        }
+
+        return $record->messages()
+            ->where('sender', self::SENDER_ADMIN)
+            ->exists();
+    }
+
+    /**
+     * Which note to show in place of the reply box. Two different situations
+     * deserve two different sentences: "nothing needed from you yet" is not the
+     * same message as "this conversation is closed".
+     */
+    protected function replyNote(): string
+    {
+        return in_array($this->getRecord()->request_status, self::CLOSED_STATUSES, true)
+            ? __('portal_requests.view.reply_closed')
+            : __('portal_requests.view.reply_awaiting');
+    }
+
+    /**
+     * The reply box. Rendered inline by the blade as `$this->replyAction`, the
+     * same dynamic-property resolution DatabaseBackupWidget relies on
+     * (Schemas\Concerns\ResolvesDynamicLivewireProperties::__get). The modal
+     * itself is emitted by the panel's own page layout — components/page/
+     * index.blade.php:135 already prints <x-filament-actions::modals />, so the
+     * blade must NOT print a second one.
+     *
+     * ── Why the closure re-checks everything ──
+     * `->visible()` governs the BUTTON, not the endpoint. Filament's
+     * mountAction() rejects a disabled action but does not test isVisible()
+     * (Actions/Concerns/InteractsWithActions.php:112-135), so a hidden action
+     * can still be mounted by a hand-made Livewire call. The gate and the
+     * ownership check therefore run inside the closure, where they actually
+     * guard the write.
+     */
+    public function replyAction(): Action
+    {
+        return Action::make('reply')
+            ->label(__('portal_requests.view.reply'))
+            ->icon(Heroicon::OutlinedChatBubbleLeftRight)
+            ->modalHeading(__('portal_requests.view.reply'))
+            ->modalSubmitActionLabel(__('portal_requests.view.reply_submit'))
+            ->visible(fn (): bool => $this->canReply())
+            ->schema([
+                Textarea::make('body')
+                    ->label(__('portal_requests.view.reply_body'))
+                    ->rows(5)
+                    ->required()
+                    ->maxLength(5000),
+            ])
+            ->action(function (array $data): void {
+                $record = $this->getRecord();
+
+                // Belt and braces over the resource's owner scope: that scope
+                // is what resolved the record at mount, and #[Locked] stops the
+                // id being swapped afterwards, but a write is worth checking at
+                // the point of writing.
+                abort_unless($record->user_id === auth()->id(), 403);
+
+                abort_unless($this->canReply(), 403);
+
+                $record->messages()->create([
+                    'sender' => self::SENDER_CUSTOMER,
+                    'body' => $data['body'],
+                ]);
+
+                // Drop the cached relation so the thread below re-queries and
+                // the new message shows immediately.
+                $record->unsetRelation('messages');
+
+                Notification::make()
+                    ->title(__('portal_requests.view.reply_sent'))
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /**
+     * The thread, oldest → newest (the ordering lives on the relation, so every
+     * reader gets the same order). Read-only: this builds display rows and
+     * nothing on this page can edit or delete an existing message.
+     *
+     * @return array<int, array<string, string>>
+     */
+    protected function conversationMessages(PortalRequest $request): array
+    {
+        return $request->messages
+            ->map(fn (PortalRequestMessage $message): array => [
+                // 'admin' | 'customer' — a class suffix in the blade, so it is
+                // derived from the model helpers rather than passed through.
+                'side' => $message->isFromAdmin() ? 'admin' : 'customer',
+                'who' => $message->isFromAdmin()
+                    ? __('portal_requests.view.sender_admin')
+                    : __('portal_requests.view.sender_you'),
+                'time' => $this->toJalali($message->created_at, withTime: true) ?? $this->placeholder,
+                'body' => (string) $message->body,
+            ])
+            ->all();
     }
 
     // ── View data ──────────────────────────────────────────────────────────
@@ -144,6 +284,14 @@ class ViewPortalRequest extends ViewRecord
                 'attachments_label' => __('portal_requests.field.attachments'),
                 'attachments' => $this->attachments($request),
                 'attachments_empty' => __('portal_requests.view.no_attachments'),
+            ],
+
+            'conversation' => [
+                'heading' => __('portal_requests.view.conversation'),
+                'messages' => $this->conversationMessages($request),
+                'empty' => __('portal_requests.view.conversation_empty'),
+                'can_reply' => $this->canReply(),
+                'note' => $this->replyNote(),
             ],
 
             'back' => [

@@ -100,6 +100,47 @@
         </div>
     @endif
 
+    {{-- ── e) conversation: read-only thread + gated reply box ──
+         The thread is immutable by construction — these are printed rows, not
+         fields, so there is nothing here to edit or delete. The reply button is
+         `$this->replyAction`, whose own closure re-checks the gate and the
+         ownership before writing; the `can_reply` flag below only decides what
+         this blade draws. --}}
+    <div class="prv-card">
+        <div class="prv-card-head">
+            <span class="prv-card-icon">
+                <x-filament::icon :icon="\Filament\Support\Icons\Heroicon::OutlinedChatBubbleLeftRight" />
+            </span>
+            <h3 class="prv-card-title">{{ $conversation['heading'] }}</h3>
+        </div>
+
+        <div class="prv-card-body">
+            @if (filled($conversation['messages']))
+                <ul class="prv-thread">
+                    @foreach ($conversation['messages'] as $message)
+                        <li class="prv-msg prv-msg-{{ $message['side'] }}">
+                            <div class="prv-msg-meta">
+                                <span class="prv-msg-who">{{ $message['who'] }}</span>
+                                <span class="prv-msg-time">{{ $message['time'] }}</span>
+                            </div>
+                            <p class="prv-msg-body prv-prose" dir="auto">{{ $message['body'] }}</p>
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <span class="prv-field-value prv-muted">{{ $conversation['empty'] }}</span>
+            @endif
+
+            @if ($conversation['can_reply'])
+                <div class="prv-reply">
+                    {{ $this->replyAction }}
+                </div>
+            @else
+                <div class="prv-note">{{ $conversation['note'] }}</div>
+            @endif
+        </div>
+    </div>
+
     {{-- ── d) the request itself, read-only ── --}}
     <div class="prv-card">
         <div class="prv-card-head">
@@ -281,6 +322,46 @@
     .prv-muted { color: var(--prv-label); }
     /* Keeps the customer's own line breaks without ever emitting raw markup. */
     .prv-prose { white-space: pre-wrap; }
+
+    /* ── e) conversation ──
+       Sides are set with margin-inline, so they follow the document direction:
+       under RTL the customer's own bubbles sit on the left and EIS's on the
+       right, which is the way Persian chat clients read. */
+    .prv-thread { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .625rem; }
+
+    .prv-msg {
+        max-width: 34rem;
+        padding: .625rem .875rem;
+        border: 1px solid var(--prv-line);
+        border-radius: .75rem;
+        background-color: var(--prv-surface);
+    }
+    /* EIS — the other party: accent-tinted, on the start edge. */
+    .prv-msg-admin {
+        margin-inline-end: auto;
+        background-color: var(--prv-accent-tint);
+        border-color: var(--prv-accent-line);
+    }
+    /* The customer's own words: neutral surface, on the end edge. */
+    .prv-msg-customer { margin-inline-start: auto; }
+
+    .prv-msg-meta {
+        display: flex; align-items: baseline; justify-content: space-between;
+        gap: .75rem; margin-bottom: .25rem;
+    }
+    .prv-msg-who { font-size: .6875rem; font-weight: 700; color: var(--prv-value); }
+    .prv-msg-admin .prv-msg-who { color: var(--prv-accent); }
+    .prv-msg-time { font-size: .625rem; color: var(--prv-label); font-variant-numeric: tabular-nums; }
+    .prv-msg-body { margin: 0; font-size: .8125rem; line-height: 1.8; color: var(--prv-value); word-break: break-word; }
+
+    .prv-reply { display: flex; justify-content: flex-start; }
+    .prv-note {
+        font-size: .75rem; color: var(--prv-label);
+        background-color: var(--prv-tone-tint);
+        border: 1px dashed var(--prv-line);
+        border-radius: .625rem;
+        padding: .5rem .75rem;
+    }
 
     /* ── attachments ── */
     .prv-files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .375rem; }
