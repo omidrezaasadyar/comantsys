@@ -136,18 +136,67 @@
 
 @push('styles')
     {{--
-        Vazirmatn is self-hosted (public/fonts/vazirmatn) — already shipped for the
-        PDF pipeline, reused here.
+        Every face this page uses is served from public/fonts — no CDN, no
+        build-time fetch. The woff2 files are committed static assets, so prod
+        gets them from a plain `git pull`.
 
-        TODO(prod): self-host Barlow + Barlow Condensed before this reaches
-        portal.eisindustry.com. They are pulled from Google Fonts for DEV only;
-        a production login page should not depend on a third-party CDN.
+        Vazirmatn (public/fonts/vazirmatn) was already shipped for the PDF
+        pipeline and is reused here.
+
+        Barlow + Barlow Condensed (public/fonts/barlow) come from the npm
+        packages @fontsource/barlow and @fontsource/barlow-condensed, both pinned
+        to 5.3.0 in package.json — that pin is the provenance record and the way
+        to regenerate the files; nothing at runtime or build time reads it.
+
+        LATIN subset only, and only the weights the CSS below actually asks for:
+          Barlow            400  (body text; .eis-latin runs)
+          Barlow Condensed  500  (inherited by .eis-brand-name, .eis-division-num,
+                                  .eis-division-label, .eis-clock-label, .eis-kicker
+                                  — see the note on 500 below)
+          Barlow Condensed  600  (.eis-title, .eis-signin, .eis-submit)
+          Barlow Condensed  700  (.eis-logo)
+        Adding a weight to the CSS means adding the file here too, or the browser
+        will synthesise it.
     --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
 
     <style>
+        @font-face {
+            font-family: 'Barlow';
+            src: url('/fonts/barlow/Barlow-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-display: swap;
+        }
+
+        /*
+           500 is deliberate, and it is NOT a weight any rule names explicitly.
+           The five elements listed above set the Condensed family without a
+           font-weight, so they inherit 400 from .eis-login. While this page was
+           on the Google CDN the request was `Barlow+Condensed:wght@500;600;700` —
+           400 was never delivered, so CSS font matching resolved those elements
+           UP to 500. Shipping 400 here instead of 500 would silently make all
+           five lighter than they have always rendered.
+        */
+        @font-face {
+            font-family: 'Barlow Condensed';
+            src: url('/fonts/barlow/BarlowCondensed-Medium.woff2') format('woff2');
+            font-weight: 500;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Barlow Condensed';
+            src: url('/fonts/barlow/BarlowCondensed-SemiBold.woff2') format('woff2');
+            font-weight: 600;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Barlow Condensed';
+            src: url('/fonts/barlow/BarlowCondensed-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-display: swap;
+        }
+
         @font-face {
             font-family: 'VazirmatnLogin';
             src: url('/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
@@ -200,6 +249,10 @@
             --eis-radius-lg: 7px;
             --eis-shadow-lg: 0 12px 32px rgba(43, 43, 45, 0.22);
 
+            /* Both resolve to the @font-face blocks above (public/fonts/barlow).
+               Plain family names are safe here: nothing else in the project
+               declares 'Barlow' or 'Barlow Condensed', and no panel loads them —
+               unlike Vazirmatn, which is why that one is aliased. */
             --eis-font-heading: 'Barlow Condensed', system-ui, sans-serif;
             --eis-font-body: 'Barlow', system-ui, sans-serif;
             /* 'VazirmatnLogin' is the @font-face above, served from the project's own
