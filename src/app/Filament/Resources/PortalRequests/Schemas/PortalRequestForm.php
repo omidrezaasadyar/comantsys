@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\PortalRequests\Schemas;
 
 use App\Models\PortalRequest;
+use App\Models\PortalRequestMessage;
+use Ariaieboy\Jalali\Jalali;
+use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
@@ -11,6 +14,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Support\HtmlString;
 
 /**
@@ -171,6 +175,22 @@ class PortalRequestForm
                             ])
                             ->columnSpanFull(),
                     ]),
+
+                // ══ ZONE C — conversation (READ-ONLY LOG) ══
+                // Immutable by construction: a Placeholder renders HTML and
+                // holds no state, so there is nothing here to edit, delete or
+                // dehydrate. New messages arrive only through the page's
+                // sendMessage action, which appends — see EditPortalRequest.
+                Section::make(__('portal_requests.admin.section.conversation'))
+                    ->description(__('portal_requests.admin.hint.conversation'))
+                    ->columnSpanFull()
+                    ->schema([
+                        Placeholder::make('conversation')
+                            ->hiddenLabel()
+                            ->content(fn (?PortalRequest $record): HtmlString => new HtmlString(
+                                static::conversationHtml($record),
+                            )),
+                    ]),
             ]);
     }
 
@@ -214,5 +234,98 @@ class PortalRequestForm
             ->implode('');
 
         return '<ul class="list-disc space-y-1 ps-5 text-sm">' . $items . '</ul>';
+    }
+
+    /**
+     * The conversation, oldest → newest (the ordering lives on the relation,
+     * so every reader gets the same thread order).
+     *
+     * Deliberately plain HTML, like customerFilesHtml() above: a Placeholder
+     * cannot be edited or dehydrated, which is exactly the guarantee this log
+     * needs — an operator can add to the thread but never rewrite it.
+     *
+     * Styling goes through a scoped <style> block with prm-* class names rather
+     * than Tailwind utilities. Tailwind v4 scans source files to decide which
+     * utilities to compile, and classes that exist only inside a PHP string are
+     * not guaranteed to survive that scan (CLAUDE.md §6) — hand-written CSS is
+     * immune. Dark mode keys off Filament's `.dark` ancestor class.
+     */
+    protected static function conversationHtml(?PortalRequest $record): string
+    {
+        $messages = $record?->messages;
+
+        if (blank($messages)) {
+            return '<span class="text-sm text-gray-500 dark:text-gray-400">'
+                . e(__('portal_requests.admin.empty.conversation'))
+                . '</span>';
+        }
+
+        $rows = $messages
+            ->map(function (PortalRequestMessage $message): string {
+                $isAdmin = $message->isFromAdmin();
+
+                $side = $isAdmin ? 'admin' : 'customer';
+
+                $who = $isAdmin
+                    ? __('portal_requests.admin.sender.admin')
+                    : __('portal_requests.admin.sender.customer');
+
+                // nl2br AFTER e(): escape first, then turn the newlines the
+                // operator actually typed into markup. The reverse order would
+                // let the escaping eat the <br> tags.
+                $body = nl2br(e((string) $message->body));
+
+                return '<li class="prm-msg prm-' . $side . '">'
+                    . '<div class="prm-meta">'
+                    . '<span class="prm-who">' . e($who) . '</span>'
+                    . '<span class="prm-time">' . e(static::jalaliMoment($message->created_at)) . '</span>'
+                    . '</div>'
+                    . '<div class="prm-body">' . $body . '</div>'
+                    . '</li>';
+            })
+            ->implode('');
+
+        return static::conversationStyles() . '<ul class="prm-thread">' . $rows . '</ul>';
+    }
+
+    /**
+     * Jalali date+time for display — the same conversion the project's
+     * `jalaliDateTime()` table macro and RecordValueHelpers::toJalali() use, so
+     * a message stamp reads identically to every other timestamp in the panel.
+     */
+    protected static function jalaliMoment(mixed $value): string
+    {
+        if (blank($value)) {
+            return '—';
+        }
+
+        return Jalali::fromCarbon(
+            Carbon::parse($value)->setTimezone(FilamentTimezone::get()),
+        )->format('Y/m/d H:i');
+    }
+
+    /**
+     * Scoped styles for the thread. Emitted once per render alongside the list.
+     */
+    protected static function conversationStyles(): string
+    {
+        return <<<'CSS'
+            <style>
+                .prm-thread { display: flex; flex-direction: column; gap: .75rem; margin: 0; padding: 0; list-style: none; }
+                .prm-msg { border: 1px solid rgb(228 228 231); border-radius: .75rem; padding: .625rem .875rem; max-width: 46rem; }
+                .prm-customer { background-color: rgb(244 244 245); margin-inline-end: auto; }
+                .prm-admin { background-color: rgb(239 246 255); border-color: rgb(191 219 254); margin-inline-start: auto; }
+                .prm-meta { display: flex; gap: .5rem; align-items: baseline; justify-content: space-between; margin-bottom: .25rem; }
+                .prm-who { font-size: .75rem; font-weight: 600; color: rgb(63 63 70); }
+                .prm-time { font-size: .6875rem; color: rgb(113 113 122); font-variant-numeric: tabular-nums; }
+                .prm-body { font-size: .875rem; line-height: 1.6; color: rgb(39 39 42); white-space: normal; word-break: break-word; }
+                .dark .prm-msg { border-color: rgb(63 63 70); }
+                .dark .prm-customer { background-color: rgb(39 39 42); }
+                .dark .prm-admin { background-color: rgb(30 41 59); border-color: rgb(51 65 85); }
+                .dark .prm-who { color: rgb(228 228 231); }
+                .dark .prm-time { color: rgb(161 161 170); }
+                .dark .prm-body { color: rgb(228 228 231); }
+            </style>
+            CSS;
     }
 }

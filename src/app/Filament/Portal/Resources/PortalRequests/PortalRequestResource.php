@@ -4,6 +4,7 @@ namespace App\Filament\Portal\Resources\PortalRequests;
 
 use App\Filament\Portal\Resources\PortalRequests\Pages\CreatePortalRequest;
 use App\Filament\Portal\Resources\PortalRequests\Pages\ListPortalRequests;
+use App\Filament\Portal\Resources\PortalRequests\Pages\ViewPortalRequest;
 use App\Filament\Portal\Resources\PortalRequests\Schemas\PortalRequestForm;
 use App\Filament\Portal\Resources\PortalRequests\Tables\PortalRequestsTable;
 use App\Models\PortalRequest;
@@ -43,13 +44,18 @@ class PortalRequestResource extends Resource
     }
 
     /**
-     * List + create. No view/edit page yet.
+     * List + create + read-only view. Still no edit page — a customer cannot
+     * change a submitted request from the portal.
+     *
+     * The view route resolves its record through getEloquentQuery() below, so
+     * the owner scope covers it without any extra check on the page.
      */
     public static function getPages(): array
     {
         return [
             'index' => ListPortalRequests::route('/'),
             'create' => CreatePortalRequest::route('/create'),
+            'view' => ViewPortalRequest::route('/{record}'),
         ];
     }
 

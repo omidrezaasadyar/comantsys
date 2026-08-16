@@ -46,6 +46,16 @@ class PortalRequest extends Model
         return $this->hasMany(PortalRequestAttachment::class);
     }
 
+    /**
+     * گفت‌وگوی درخواست — از قدیمی به جدید، یعنی ترتیب خواندن یک رشته‌پیام.
+     * مرتب‌سازی روی خودِ رابطه است تا هر جای پروژه ترتیب یکسانی بگیرد.
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(PortalRequestMessage::class)
+            ->orderBy('created_at');
+    }
+
     // ── نقشهٔ وضعیت‌ها ──
 
     /**
@@ -79,16 +89,20 @@ class PortalRequest extends Model
 
     /**
      * منبع یگانهٔ حقیقت برای وضعیت رسیدگی (مقدار ⇐ برچسب).
-     * فعلاً مجموعهٔ کوچکی است؛ بعداً تکمیل می‌شود.
+     * ترتیب آرایه = ترتیب طبیعیِ چرخهٔ کار، و همین ترتیب در فهرست‌های
+     * انتخابی نمایش داده می‌شود؛ پس تصادفی نیست.
      *
      * @return array<string, string>
      */
     public static function requestStatuses(): array
     {
         return [
-            'received'     => __('portal_requests.request_status.received'),
-            'under_review' => __('portal_requests.request_status.under_review'),
-            'queued'       => __('portal_requests.request_status.queued'),
+            'received'       => __('portal_requests.request_status.received'),
+            'under_review'   => __('portal_requests.request_status.under_review'),
+            'needs_revision' => __('portal_requests.request_status.needs_revision'),
+            'queued'         => __('portal_requests.request_status.queued'),
+            'rejected'       => __('portal_requests.request_status.rejected'),
+            'completed'      => __('portal_requests.request_status.completed'),
         ];
     }
 
@@ -100,9 +114,86 @@ class PortalRequest extends Model
     public static function requestStatusColors(): array
     {
         return [
-            'received'     => 'gray',
-            'under_review' => 'warning',
-            'queued'       => 'info',
+            'received'       => 'gray',
+            'under_review'   => 'warning',
+            'needs_revision' => 'warning',
+            'queued'         => 'info',
+            'rejected'       => 'danger',
+            'completed'      => 'success',
+        ];
+    }
+
+    // ── وضعیت نمایشی (halo) ──
+
+    /**
+     * وضعیت نمایشیِ درخواست برای جعبهٔ بالای صفحهٔ مشاهده.
+     *
+     * دو ستون وضعیت داریم (اعتبارسنجی و رسیدگی) ولی کاربر باید یک پیام واحد
+     * ببیند؛ این متد آن دو را با یک زنجیرهٔ اولویت به یک کلید تبدیل می‌کند و
+     * تنها منبع حقیقت برای آن جعبه است.
+     *
+     * ترتیب اولویت (بالاتر برنده است) — عمداً همین ترتیب:
+     *   ۱. rejected  — رد شدنِ اعتبارسنجی حرف آخر است؛ حتی اگر رسیدگی جلو رفته
+     *                  باشد، کاربر باید «رد شد» را ببیند نه چیز دیگر.
+     *   ۲. revision  — درخواستِ بازنگری کاری است که کاربر باید انجام دهد، پس بر
+     *                  «تأیید شده» مقدم است.
+     *   ۳. verified  — تأیید شده و کاری برای کاربر نمانده.
+     *   ۴. pending   — حالت پیش‌فرض.
+     */
+    public function viewState(): string
+    {
+        return match (true) {
+            $this->validation_status === 'rejected' => 'rejected',
+            $this->request_status === 'needs_revision' => 'revision',
+            $this->validation_status === 'verified' => 'verified',
+            default => 'pending',
+        };
+    }
+
+    /**
+     * عنوان هر وضعیت نمایشی (کلید ⇐ برچسب).
+     *
+     * @return array<string, string>
+     */
+    public static function viewStates(): array
+    {
+        return [
+            'rejected' => __('portal_requests.view_state.rejected.title'),
+            'revision' => __('portal_requests.view_state.revision.title'),
+            'verified' => __('portal_requests.view_state.verified.title'),
+            'pending' => __('portal_requests.view_state.pending.title'),
+        ];
+    }
+
+    /**
+     * توضیح یک‌خطی زیر عنوان — همان چیزی که به کاربر می‌گوید حالا چه کند.
+     *
+     * @return array<string, string>
+     */
+    public static function viewStateDescriptions(): array
+    {
+        return [
+            'rejected' => __('portal_requests.view_state.rejected.description'),
+            'revision' => __('portal_requests.view_state.revision.description'),
+            'verified' => __('portal_requests.view_state.verified.description'),
+            'pending' => __('portal_requests.view_state.pending.description'),
+        ];
+    }
+
+    /**
+     * رنگ هر وضعیت نمایشی — همان واژگان رنگی بقیهٔ پروژه.
+     *
+     * @return array<string, string>
+     */
+    public static function viewStateColors(): array
+    {
+        return [
+            'rejected' => 'danger',
+            'revision' => 'warning',
+            'verified' => 'success',
+            // قرمز، نه خنثی: تا وقتی اعتبارسنجی تأیید نشده، درخواست هنوز
+            // «کارِ باز» است و باید در نگاه اول توجه را جلب کند.
+            'pending' => 'danger',
         ];
     }
 

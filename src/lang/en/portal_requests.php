@@ -69,10 +69,44 @@ return [
     ],
 
     // ── Progress of the request itself ──
+    // ── Customer view page ──
+    // view_state = the single state derived from the two status columns; the
+    // priority chain lives in PortalRequest::viewState().
+    'view_state' => [
+        'rejected' => [
+            'title'       => 'Request rejected',
+            'description' => 'This request did not pass the initial review. Please contact your account manager to follow up.',
+        ],
+        'revision' => [
+            'title'       => 'Your revision is needed',
+            'description' => 'Staff have asked you to revise this request. See the official response for details.',
+        ],
+        'verified' => [
+            'title'       => 'Request verified',
+            'description' => 'The request details have been verified and the request is being processed.',
+        ],
+        'pending' => [
+            'title'       => 'Awaiting review',
+            'description' => 'Your request has been submitted and is queued for review.',
+        ],
+    ],
+
+    'view' => [
+        'back_to_list'      => 'Back to requests',
+        'submitted_at'      => 'Submitted',
+        'updated_at'        => 'Last updated',
+        'official_response' => 'Official response',
+        'details'           => 'Request details',
+        'no_attachments'    => 'No files attached.',
+    ],
+
     'request_status' => [
-        'received'     => 'Received',
-        'under_review' => 'Under review',
-        'queued'       => 'Queued',
+        'received'       => 'Received',
+        'under_review'   => 'Under review',
+        'needs_revision' => 'Needs revision',
+        'queued'         => 'Queued',
+        'rejected'       => 'Rejected',
+        'completed'      => 'Completed',
     ],
 
     // ── Admin side (internal review desk) ──
@@ -92,25 +126,45 @@ return [
             'submission'     => 'Submitted by the customer',
             'customer_files' => 'Customer attachments',
             'review'         => 'Review and response',
+            'conversation'   => 'Conversation with the customer',
         ],
 
         'hint' => [
-            'submission' => 'Entered by the customer; not editable here.',
-            'review'     => 'Only this section is filled in by staff; the result is shown in the customer portal.',
+            'submission'   => 'Entered by the customer; not editable here.',
+            'review'       => 'Only this section is filled in by staff; the result is shown in the customer portal.',
+            'conversation' => 'The message history is read-only and is never edited or deleted; use the "Send message" button at the top of the page to add one.',
         ],
 
         'field' => [
             'admin_response'    => 'Staff response',
             'admin_attachments' => 'Response attachments',
+            'message_body'      => 'Message',
+            'ask_revision'      => 'Ask customer to revise (unlocks editing)',
         ],
 
         'help' => [
             'admin_response'    => 'The text the customer sees in their portal.',
             'admin_attachments' => 'Files sent to the customer with the response. Up to 10 files, 10 MB each.',
+            'ask_revision'      => 'Ticking this moves the request status to "Needs revision". Unticking it does not undo that.',
         ],
 
         'empty' => [
             'customer_attachments' => 'The customer attached no files.',
+            'conversation'         => 'No messages exchanged yet.',
+        ],
+
+        'sender' => [
+            'admin'    => 'Staff',
+            'customer' => 'Customer',
+        ],
+
+        'action' => [
+            'send_message'        => 'Send message',
+            'send_message_submit' => 'Send',
+        ],
+
+        'notify' => [
+            'message_sent' => 'Message posted.',
         ],
     ],
 

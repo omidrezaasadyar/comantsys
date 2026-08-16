@@ -2,6 +2,7 @@
 
 namespace App\Filament\Portal\Resources\PortalRequests\Tables;
 
+use App\Filament\Portal\Resources\PortalRequests\Pages\ViewPortalRequest;
 use App\Models\PortalRequest;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -12,6 +13,10 @@ class PortalRequestsTable
     {
         return $table
             ->defaultSort('request_date', 'desc')
+            // Clicking a row opens the read-only view. Same owner-scoped query
+            // as the list, so a row a customer cannot see is a row they cannot
+            // open either.
+            ->recordUrl(fn (PortalRequest $record): string => ViewPortalRequest::getUrl(['record' => $record]))
             ->columns([
                 TextColumn::make('request_number')
                     ->label(__('portal_requests.field.request_number'))
