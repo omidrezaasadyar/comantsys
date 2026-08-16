@@ -1,0 +1,46 @@
+/*
+ * public/fonts/vazirmatn/vazirmatn.css
+ *
+ * Self-hosted Vazirmatn for the PORTAL panel body (App\Providers\Filament\
+ * PortalPanelProvider), loaded through Filament's LocalFontProvider:
+ *
+ *   ->font('Vazirmatn', url: ..., provider: LocalFontProvider::class)
+ *
+ * LocalFontProvider only emits a <link> to this stylesheet, so the @font-face
+ * blocks have to live here rather than in the panel provider.
+ *
+ * No CDN. The woff2 next to this file are committed static assets, already
+ * shipped for the PDF pipeline and reused by the login page — nothing is
+ * fetched at build or request time.
+ *
+ * Family name is plain 'Vazirmatn', NOT the login page's 'VazirmatnLogin'
+ * alias: the two are declared in the same document on /portal/login and must
+ * not collide. See the note in the login blade's --eis-font-fa comment.
+ *
+ * Vazirmatn carries clean Latin glyphs, so this one family covers both the
+ * Persian and the English portal UI — no locale-conditional font logic.
+ */
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/fonts/vazirmatn/Vazirmatn-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/fonts/vazirmatn/Vazirmatn-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/fonts/vazirmatn/Vazirmatn-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}

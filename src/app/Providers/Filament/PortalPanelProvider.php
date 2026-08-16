@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -19,10 +20,10 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
  * Customer-facing portal panel — intentionally minimal.
  *
  * It carries the PortalRequests resource and nothing else: no pages, no
- * widgets, no plugins, and no ->viteTheme()/->colors()/->font() (the panel
- * chrome is stock Filament). The LOGIN page is the one exception — it is the
- * shared branded page, which inlines all of its own CSS and therefore needs no
- * panel theme to look right.
+ * widgets, no plugins, and no ->viteTheme()/->colors() (the panel chrome is
+ * stock Filament apart from the font). The LOGIN page is the one exception —
+ * it is the shared branded page, which inlines all of its own CSS and therefore
+ * needs no panel theme to look right.
  *
  * The id 'portal' is load-bearing: User::canAccessPanel() branches on exactly
  * this string, so renaming it here silently changes who can log in.
@@ -40,6 +41,30 @@ class PortalPanelProvider extends PanelProvider
             // Same branded page as the admin console (App\Filament\Auth\BrandedLogin),
             // differing only by its seams: customer copy, no SSO, no link back to admin.
             ->login(\App\Filament\Portal\Auth\Login::class)
+            // Self-hosted Vazirmatn for the panel body, replacing Filament's
+            // bundled Inter (which has no Persian glyphs, so Persian text fell
+            // back to whatever the OS offered).
+            //
+            // LocalFontProvider is passed EXPLICITLY: getFontProvider() defaults
+            // to BunnyFontProvider the moment a custom family is set, so without
+            // this the panel would silently fetch from fonts.bunny.net — which is
+            // what the admin panel does today. Nothing here touches admin.
+            //
+            // The provider only emits a <link> to $url, so the @font-face blocks
+            // live in public/fonts/vazirmatn/vazirmatn.css. Both URLs are Closures
+            // so they resolve per request rather than being frozen at boot.
+            //
+            // Vazirmatn's Latin glyphs are clean, so this single family serves the
+            // Persian and the English UI alike — no locale-conditional switching.
+            ->font(
+                'Vazirmatn',
+                url: fn (): string => asset('fonts/vazirmatn/vazirmatn.css'),
+                provider: LocalFontProvider::class,
+                // Custom families get no preload by default (HasFont::getFontPreload).
+                // 400 is the body weight, so preloading just that one buys the
+                // first paint without pulling the other two up front.
+                preload: fn (): array => [asset('fonts/vazirmatn/Vazirmatn-Regular.woff2')],
+            )
             // Same guard as admin: one users table, one session; the two
             // audiences are separated by canAccessPanel(), not by guard.
             ->authGuard('web')

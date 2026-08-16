@@ -256,10 +256,14 @@
             --eis-font-heading: 'Barlow Condensed', system-ui, sans-serif;
             --eis-font-body: 'Barlow', system-ui, sans-serif;
             /* 'VazirmatnLogin' is the @font-face above, served from the project's own
-               public/fonts/vazirmatn/*.woff2. Plain 'Vazirmatn' is deliberately NOT in
-               this stack: the panel's ->font('Vazirmatn') pulls that family name from
-               fonts.bunny.net, and listing it here would let Persian silently fall back
-               to the third-party copy. Tahoma is the local Persian-capable last resort. */
+               woff2 under public/fonts. Plain 'Vazirmatn' is deliberately NOT in this
+               stack, because what that name resolves to depends on which panel is
+               rendering: the admin panel points it at a third-party CDN, so listing it
+               here would let Persian silently fall back to that copy, while the portal
+               panel points it at a self-hosted face. The alias keeps this page on its
+               own local files either way. Tahoma is the Persian-capable last resort.
+               (Hostnames are kept out of this comment on purpose, so a grep for CDN
+               hosts across the rendered HTML stays truthful.) */
             --eis-font-fa: 'VazirmatnLogin', Tahoma, sans-serif;
 
             position: relative;
