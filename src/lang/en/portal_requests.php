@@ -99,6 +99,10 @@ return [
         'details'           => 'Request details',
         'no_attachments'    => 'No files attached.',
 
+        // ── Revision (only while status is needs_revision) ──
+        'edit_request' => 'Edit and resubmit',
+        'edit_hint'    => 'Staff have asked you to revise this request.',
+
         // ── Conversation ──
         'conversation'       => 'Conversation',
         'conversation_empty' => 'No messages exchanged yet.',

@@ -59,6 +59,20 @@
         </div>
     </div>
 
+    {{-- ── revise call-to-action — present ONLY while the edit page's own gate
+         is open (request_status = needs_revision). The page re-checks it on
+         mount and on every Livewire hydration, so this is a signpost, not the
+         lock. --}}
+    @if (filled($edit))
+        <div class="prv-editbar">
+            <span class="prv-editbar-hint">{{ $edit['hint'] }}</span>
+            <a href="{{ $edit['url'] }}" class="prv-editbtn">
+                <x-filament::icon :icon="\Filament\Support\Icons\Heroicon::OutlinedPencilSquare" />
+                <span>{{ $edit['label'] }}</span>
+            </a>
+        </div>
+    @endif
+
     {{-- ── b) eight icon-chip info boxes: six neutral, two tinted by status ── --}}
     <div class="prv-boxes">
         @foreach ($boxes as $box)
@@ -322,6 +336,29 @@
     .prv-muted { color: var(--prv-label); }
     /* Keeps the customer's own line breaks without ever emitting raw markup. */
     .prv-prose { white-space: pre-wrap; }
+
+    /* ── revise call-to-action ── */
+    .prv-editbar {
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+        gap: .75rem;
+        padding: .75rem 1rem;
+        border: 1px dashed #fcd34d;
+        border-radius: .75rem;
+        background-color: #fffbeb;
+    }
+    .prv-editbar-hint { font-size: .8125rem; color: #b45309; }
+    .prv-editbtn {
+        display: inline-flex; align-items: center; gap: .375rem;
+        padding: .4375rem .875rem; border-radius: .5rem;
+        font-size: .8125rem; font-weight: 600; text-decoration: none;
+        background-color: #b45309; color: #ffffff;
+    }
+    .prv-editbtn:hover { background-color: #92400e; }
+    .prv-editbtn svg { width: 1rem; height: 1rem; }
+    .dark .prv-editbar { background-color: #2a1f0e; border-color: #b45309; }
+    .dark .prv-editbar-hint { color: #fcd34d; }
+    .dark .prv-editbtn { background-color: #b45309; color: #ffffff; }
+    .dark .prv-editbtn:hover { background-color: #d97706; }
 
     /* ── e) conversation ──
        Sides are set with margin-inline, so they follow the document direction:

@@ -294,6 +294,17 @@ class ViewPortalRequest extends ViewRecord
                 'note' => $this->replyNote(),
             ],
 
+            // Same gate as the edit page itself — asked, not re-implemented, so
+            // the button cannot appear in a state the page would refuse. The
+            // page enforces it again server-side; this only decides the link.
+            'edit' => EditPortalRequest::canAccess(['record' => $request])
+                ? [
+                    'label' => __('portal_requests.view.edit_request'),
+                    'hint' => __('portal_requests.view.edit_hint'),
+                    'url' => EditPortalRequest::getUrl(['record' => $request]),
+                ]
+                : null,
+
             'back' => [
                 'label' => __('portal_requests.view.back_to_list'),
                 'url' => PortalRequestResource::getUrl('index'),
