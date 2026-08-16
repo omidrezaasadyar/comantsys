@@ -1,11 +1,20 @@
 {{-- resources/views/filament/pages/auth/login.blade.php --}}
 {{--
-    Custom-branded login for the admin panel (App\Filament\Auth\Login).
+    SHARED branded login — rendered by BOTH panels (App\Filament\Auth\Login for
+    the admin console, App\Filament\Portal\Auth\Login for the customer portal),
+    via their common base App\Filament\Auth\BrandedLogin. The path still says
+    "pages/auth" for historical reasons; it is not admin-specific.
+
+    Per-panel differences arrive as SEAMS on the page class, never as a second
+    copy of this file:
+      $this->copyNamespace()      which lang/*/{namespace}.php supplies the copy
+      $this->alternatePanelLink() the one-way cross-panel button, or null
 
     Only the presentation lives here. The form posts into Filament's inherited
     authenticate() via wire:submit, and the inputs bind to the base class's form
     state path `data` (data.email / data.password / data.remember), so the rate
-    limiter, Attempting/Failed events and session regeneration are untouched.
+    limiter, Attempting/Failed events, session regeneration and the panel-aware
+    post-login redirect are untouched.
 
     The EN/FA segmented control is PRESENTATION ONLY: it flips a local `lang`
     value that swaps visible copy and text direction. It does NOT change the
@@ -15,43 +24,88 @@
 
 @php
     use Carbon\Carbon;
+    use Illuminate\Support\Facades\Lang;
     use Morilog\Jalali\Jalalian;
 
     // Latin -> Persian digits, for the Persian-language presentation only.
     $faDigits = fn (string $v): string => strtr($v, ['0' => '۰', '1' => '۱', '2' => '۲', '3' => '۳', '4' => '۴', '5' => '۵', '6' => '۶', '7' => '۷', '8' => '۸', '9' => '۹']);
+
+    // SEAM: which copy file this panel uses ('login' | 'portal-login').
+    $ns = $this->copyNamespace();
+
+    // Panel copy first, admin copy as the fallback — so a panel file only has to
+    // list what genuinely differs and shared wording stays single-sourced.
+    // fallback: false on Lang::has() is deliberate: with the default `true` a key
+    // present only in the app's fallback LOCALE would report as existing for the
+    // other locale, and the page renders both locales at once.
+    $tr = fn (string $key, string $locale): mixed => Lang::has("{$ns}.{$key}", $locale, false)
+        ? __("{$ns}.{$key}", [], $locale)
+        : __("login.{$key}", [], $locale);
+
+    // SEAM: one-way cross-panel button. Null on the portal, by design.
+    // 'label_key' is a FULL key, resolved outside $ns.
+    $alternate = $this->alternatePanelLink();
+
+    // SEAM: which icon sits on each division card, in card order. The page class
+    // names them; the map below owns the drawing, because this page has no icon
+    // library — every glyph on it is hand-written inline SVG.
+    $divisionIcons = $this->divisionIcons();
+
+    // name => inner SVG markup. All Lucide-style geometry on a 24x24 grid so they
+    // sit consistently in the shared <svg> wrapper below. A name absent from this
+    // map draws nothing, so the map IS the whitelist for the {!! !!} echo — the
+    // values are literals in this file and never touch user input.
+    $divisionIconPaths = [
+        // admin: Finance / Administration / Procurement & Sales
+        'credit-card' => '<path d="M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"></path><path d="M14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path><path d="M6 12h.01"></path><path d="M18 12h.01"></path>',
+        'clipboard' => '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1"></path><path d="M8 12h8"></path><path d="M8 16h5"></path>',
+        'truck' => '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><path d="M7 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path><path d="M21 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path>',
+        // portal: Request / Submit / Track
+        'document-text' => '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path>',
+        'paper-airplane' => '<path d="m22 2-7 20-4-9-9-4z"></path><path d="M22 2 11 13"></path>',
+        'magnifying-glass' => '<circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>',
+    ];
 
     // Both locales up front, so the client-side toggle never needs a round trip.
     $copy = [];
 
     foreach (['en', 'fa'] as $l) {
         $copy[$l] = [
-            'brand' => __('login.brand', [], $l),
-            'country' => __('login.country', [], $l),
-            'lede' => __('login.lede', [], $l),
-            'divisions' => array_values((array) __('login.divisions', [], $l)),
-            'nums' => array_values((array) __('login.nums', [], $l)),
-            'status' => __('login.status', [], $l),
-            'zones' => array_values((array) __('login.zones', [], $l)),
-            'kicker' => __('login.kicker', [], $l),
-            'signIn' => __('login.sign_in', [], $l),
-            'subtitle' => __('login.subtitle', [], $l),
-            'userLabel' => __('login.user_label', [], $l),
-            'passLabel' => __('login.pass_label', [], $l),
-            'userPlaceholder' => __('login.user_placeholder', [], $l),
-            'show' => __('login.show', [], $l),
-            'hide' => __('login.hide', [], $l),
-            'caps' => __('login.caps', [], $l),
-            'remember' => __('login.remember', [], $l),
-            'submit' => __('login.submit', [], $l),
-            'verifying' => __('login.verifying', [], $l),
-            'or' => __('login.or', [], $l),
-            'sso' => __('login.sso', [], $l),
-            'lastUpdated' => __('login.last_updated', [], $l),
+            'brand' => $tr('brand', $l),
+            'country' => $tr('country', $l),
+            'lede' => $tr('lede', $l),
+            'divisions' => array_values((array) $tr('divisions', $l)),
+            'nums' => array_values((array) $tr('nums', $l)),
+            'status' => $tr('status', $l),
+            'zones' => array_values((array) $tr('zones', $l)),
+            'kicker' => $tr('kicker', $l),
+            'signIn' => $tr('sign_in', $l),
+            'subtitle' => $tr('subtitle', $l),
+            'userLabel' => $tr('user_label', $l),
+            'passLabel' => $tr('pass_label', $l),
+            'userPlaceholder' => $tr('user_placeholder', $l),
+            'show' => $tr('show', $l),
+            'hide' => $tr('hide', $l),
+            'caps' => $tr('caps', $l),
+            'remember' => $tr('remember', $l),
+            'submit' => $tr('submit', $l),
+            'verifying' => $tr('verifying', $l),
+            'lastUpdated' => $tr('last_updated', $l),
+            'altPanel' => $alternate ? __($alternate['label_key'], [], $l) : null,
         ];
     }
 
-    // Presentation default follows the panel locale (fa).
-    $defaultLang = app()->getLocale() === 'fa' ? 'fa' : 'en';
+    // SEAM: which locale this panel first-paints in. Admin follows the app locale
+    // (fa); the portal pins 'en'. Everything below that reads $defaultLang —
+    // copy, dir/RTL, clock digits, the x-cloak pairs, the radios, the footer
+    // date — follows from this one value.
+    $defaultLang = $this->defaultLocale();
+
+    // The page only builds $copy for the locales it renders, so an unknown value
+    // would fatal on $copy[$defaultLang] below. Clamp instead of blowing up.
+    if (! isset($copy[$defaultLang])) {
+        $defaultLang = 'en';
+    }
 
     // Footer "version updated" date. Source: config('app.updated_at'), which is
     // env-driven (APP_UPDATED_AT) so a deploy step can stamp it. Jalali for the
@@ -872,45 +926,50 @@
             animation: eis-spin 0.8s linear infinite;
         }
 
-        .eis-or {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 11px;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: rgba(242, 242, 243, 0.5);
-        }
-
-        .eis-or > i {
-            flex: 1;
-            height: 1px;
-            background: rgba(242, 242, 243, 0.24);
-        }
-
-        .eis-sso {
+        /* One-way cross-panel link (admin -> portal). Deliberately quieter than
+           .eis-submit: it is a wrong-door escape hatch, not an action on this
+           form. Dashed border marks it as "leaves this page". */
+        .eis-altlink {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 9px;
             width: 100%;
-            min-height: 44px;
-            padding: 11px 14px;
-            cursor: pointer;
-            font-family: var(--eis-font-heading);
-            font-weight: 600;
-            font-size: 14px;
-            line-height: 1.3;
-            color: var(--eis-bg);
+            min-height: 42px;
+            /* space-3, not space-2: the "or" divider that used to sit between
+               this and the submit button went away with the SSO block, so the
+               gap has to carry the separation on its own. Renders on the admin
+               login only — the portal has no alternatePanelLink(). */
+            margin-top: var(--eis-space-3);
+            padding: 10px 14px;
+            font-size: 13px;
+            line-height: 1.4;
+            text-align: center;
+            text-decoration: none;
+            color: var(--eis-accent-200);
             background: transparent;
-            border: 1px solid var(--eis-line-strong);
+            border: 1px dashed var(--eis-line-strong);
             border-radius: var(--eis-radius-lg);
-            transition: background 0.2s ease, border-color 0.2s ease;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
         }
 
-        .eis-sso:hover {
-            background: rgba(242, 242, 243, 0.12);
-            border-color: rgba(242, 242, 243, 0.5);
+        .eis-altlink svg {
+            flex: 0 0 auto;
+            opacity: 0.9;
+        }
+
+        /* The icon's arrow points at the destination, so it mirrors with direction. */
+        .eis-login[dir='rtl'] .eis-altlink svg {
+            transform: scaleX(-1);
+        }
+
+        /* Same !important as .eis-contact: the panel stylesheet sets its own
+           anchor colours, and a bare class (0,1,0) loses to them. */
+        .eis-login .eis-altlink:hover,
+        .eis-login .eis-altlink:focus-visible {
+            background: rgba(242, 242, 243, 0.1);
+            border-color: var(--eis-accent-300);
+            color: var(--eis-bg) !important;
         }
 
         .eis-foot {
@@ -1095,7 +1154,7 @@
                     @if ($defaultLang !== 'en') x-cloak @endif
                     style="display: contents;"
                 >
-                    @foreach ((array) __('login.title', [], 'en') as $line)
+                    @foreach ((array) $tr('title', 'en') as $line)
                         <span>{{ $line }}</span>
                     @endforeach
                 </span>
@@ -1105,7 +1164,7 @@
                     @if ($defaultLang !== 'fa') x-cloak @endif
                     style="display: contents;"
                 >
-                    @foreach ((array) __('login.title', [], 'fa') as $line)
+                    @foreach ((array) $tr('title', 'fa') as $line)
                         <span>{{ $line }}</span>
                     @endforeach
                 </span>
@@ -1118,17 +1177,11 @@
                     <div class="eis-division">
                         <div class="eis-division-top">
                             <span class="eis-division-num" x-text="t.nums[{{ $i }}]">{{ $t['nums'][$i] ?? '' }}</span>
+                            {{-- SEAM: icon named by the page class, drawn from $divisionIconPaths. --}}
                             <span style="display: flex;" aria-hidden="true">
-                                @switch($i)
-                                    @case(0)
-                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"></path><path d="M14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path><path d="M6 12h.01"></path><path d="M18 12h.01"></path></svg>
-                                        @break
-                                    @case(1)
-                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg>
-                                        @break
-                                    @default
-                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><path d="M7 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path><path d="M21 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path></svg>
-                                @endswitch
+                                @if ($path = $divisionIconPaths[$divisionIcons[$i] ?? ''] ?? null)
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">{!! $path !!}</svg>
+                                @endif
                             </span>
                         </div>
                         <span class="eis-division-label eis-tracked" x-text="t.divisions[{{ $i }}]">{{ $division }}</span>
@@ -1194,16 +1247,16 @@
                     Presentation-only language switch. Swaps copy + direction in
                     the browser; the app locale, session and server stay on fa.
                 --}}
-                <div class="eis-seg" role="group" aria-label="{{ __('login.lang_group') }}">
+                <div class="eis-seg" role="group" aria-label="{{ $tr('lang_group', $defaultLang) }}">
                     <label class="eis-seg-opt eis-latin">
                         <input type="radio" name="eis-lang" value="en" x-model="lang" @checked($defaultLang === 'en')>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg>
-                        <span>{{ __('login.lang_en') }}</span>
+                        <span>{{ $tr('lang_en', $defaultLang) }}</span>
                     </label>
 
                     <label class="eis-seg-opt">
                         <input type="radio" name="eis-lang" value="fa" x-model="lang" @checked($defaultLang === 'fa')>
-                        <span>{{ __('login.lang_fa') }}</span>
+                        <span>{{ $tr('lang_fa', $defaultLang) }}</span>
                     </label>
                 </div>
             </div>
@@ -1337,22 +1390,19 @@
                 </button>
 
                 {{--
-                    SSO: visual placeholder only — no provider is wired up.
-                    TODO: hook to the corporate IdP (type="button" + no handler
-                    until then, so it cannot submit the credentials form).
+                    SEAM — one-way cross-panel link. Rendered only where
+                    alternatePanelLink() returns a target: today that is the admin
+                    console pointing at the portal, and nothing points back.
+                    The href comes from Panel::getLoginUrl() on the page class, so
+                    it tracks the target panel's ->path() instead of being frozen
+                    into this markup.
                 --}}
-                <div style="display: flex; flex-direction: column; gap: var(--eis-space-4);">
-                    <div class="eis-or eis-tracked">
-                        <i></i>
-                        <span x-text="t.or">{{ $t['or'] }}</span>
-                        <i></i>
-                    </div>
-
-                    <button type="button" class="eis-sso" disabled aria-disabled="true" style="opacity: 0.55; cursor: not-allowed;">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
-                        <span x-text="t.sso">{{ $t['sso'] }}</span>
-                    </button>
-                </div>
+                @if ($alternate)
+                    <a href="{{ $alternate['url'] }}" class="eis-altlink">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 11h-6"></path><path d="m19 8 3 3-3 3"></path></svg>
+                        <span x-text="t.altPanel">{{ $t['altPanel'] }}</span>
+                    </a>
+                @endif
             </form>
 
             {{--

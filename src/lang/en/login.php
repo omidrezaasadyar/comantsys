@@ -40,8 +40,10 @@ return [
     'submit'    => 'Sign in',
     'verifying' => 'Verifying…',
 
-    'or'  => 'or',
-    'sso' => 'Company SSO',
+    // Label for the one-way admin -> portal button, returned as a full key by
+    // App\Filament\Auth\Login::alternatePanelLink(). It has no portal-side
+    // counterpart: portal -> admin does not exist, by design.
+    'alternate_panel' => 'Request Portal',
 
     'last_updated' => 'Last updated',
     'lang_en'   => 'EN',

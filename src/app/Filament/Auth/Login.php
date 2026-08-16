@@ -2,56 +2,42 @@
 
 namespace App\Filament\Auth;
 
-use Filament\Auth\Pages\Login as BaseLogin;
-use Filament\Schemas\Components\Component;
-use Filament\Support\Icons\Heroicon;
-use Illuminate\Contracts\View\View;
+use Filament\Facades\Filament;
 
 /**
- * Custom-branded admin login (EIS console).
+ * ADMIN login (EIS console).
  *
- * Only the presentation is replaced. authenticate(), the rate limiter,
- * the Attempting/Failed events and session regeneration all stay on the
- * Filament base class — the Blade posts into them via wire:submit="authenticate"
- * and binds to the inherited form state path `data`.
+ * Everything visual lives in BrandedLogin + its shared Blade. The admin keeps
+ * both defaults — copy namespace 'login', SSO block on — and overrides only the
+ * cross-panel link.
  */
-class Login extends BaseLogin
+class Login extends BrandedLogin
 {
-    protected string $view = 'filament.pages.auth.login';
-
     /**
-     * SimplePage's own layout boxes the content in .fi-simple-main with a width
-     * cap; this design is full-bleed, so render straight into the base document
-     * layout (<html>/<body> + @filamentStyles/@filamentScripts + @stack('styles')).
+     * The one-way door: admin → portal. Deliberately NOT mirrored on the portal
+     * side (App\Filament\Portal\Auth\Login returns null) so the customer-facing
+     * page never advertises the staff console.
+     *
+     * The URL comes from the panel itself — Panel::getLoginUrl() (HasAuth.php)
+     * resolves route("filament.portal.auth.login"), so it follows any future
+     * ->path() change and is never a hardcoded string. getPanel() returns null
+     * for an unregistered id rather than throwing, and getLoginUrl() returns
+     * null when that panel has no ->login(); either way the button simply is
+     * not rendered.
+     *
+     * @return array{url: string, label_key: string}|null
      */
-    protected static string $layout = 'filament-panels::components.layout.base';
-
-    /**
-     * BasePage::render() always passes `maxContentWidth` (a Width enum) into the
-     * layout. filament-panels::components.layout.base only declares a `livewire`
-     * prop, so every other key falls through to $attributes and gets merged onto
-     * <body> — stringifying the enum there is a fatal. Pass just `livewire`.
-     */
-    public function render(): View
+    public function alternatePanelLink(): ?array
     {
-        return view($this->getView(), $this->getViewData())
-            ->layout($this->getLayout(), ['livewire' => $this]);
-    }
+        $url = Filament::getPanel('portal')?->getLoginUrl();
 
-    /**
-     * The custom Blade renders its own inputs, so these prefix icons are not
-     * drawn today. They are kept so the field definitions stay complete if the
-     * page is ever reverted to Filament's default view.
-     */
-    protected function getEmailFormComponent(): Component
-    {
-        return parent::getEmailFormComponent()
-            ->prefixIcon(Heroicon::OutlinedUser);
-    }
+        if (blank($url)) {
+            return null;
+        }
 
-    protected function getPasswordFormComponent(): Component
-    {
-        return parent::getPasswordFormComponent()
-            ->prefixIcon(Heroicon::OutlinedLockClosed);
+        return [
+            'url' => $url,
+            'label_key' => 'login.alternate_panel',
+        ];
     }
 }

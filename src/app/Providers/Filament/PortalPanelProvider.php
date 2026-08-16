@@ -16,11 +16,13 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 /**
- * Customer-facing portal panel — intentionally EMPTY.
+ * Customer-facing portal panel — intentionally minimal.
  *
- * Purpose right now is only to prove the login door works. It therefore
- * discovers nothing: no resources, no pages, no widgets, no plugins, and no
- * custom theme/colors (stock Filament look).
+ * It carries the PortalRequests resource and nothing else: no pages, no
+ * widgets, no plugins, and no ->viteTheme()/->colors()/->font() (the panel
+ * chrome is stock Filament). The LOGIN page is the one exception — it is the
+ * shared branded page, which inlines all of its own CSS and therefore needs no
+ * panel theme to look right.
  *
  * The id 'portal' is load-bearing: User::canAccessPanel() branches on exactly
  * this string, so renaming it here silently changes who can log in.
@@ -35,7 +37,9 @@ class PortalPanelProvider extends PanelProvider
         return $panel
             ->id('portal')
             ->path('portal')
-            ->login()
+            // Same branded page as the admin console (App\Filament\Auth\BrandedLogin),
+            // differing only by its seams: customer copy, no SSO, no link back to admin.
+            ->login(\App\Filament\Portal\Auth\Login::class)
             // Same guard as admin: one users table, one session; the two
             // audiences are separated by canAccessPanel(), not by guard.
             ->authGuard('web')
