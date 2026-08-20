@@ -55,6 +55,7 @@ A Persian-language internal corporate management system for running operations a
 - **Inquiries (استعلام)** — items Repeater, Jalali datepicker, Persian i18n; per-record `direction` and `calendar` (see §5).
 - **Sourcing (تأمین‌یابی)**, **Customers**, **Companies**.
 - **Access Control (RBAC)** — Filament Shield: roles + permissions + policies enforcing **per-operation** access; `super_admin` role bypasses all checks. **User management** via `UserResource` — create/edit users and assign roles entirely in-panel (no terminal).
+- **Settings page** — super-admin-only custom page at `/admin/settings`, reached via a topbar gear icon (hidden from the sidebar). Card-based hub containing: database backup (embedded widget), user management (links to `UserResource`), roles & permissions (links to Shield), and app version display. `UserResource` and Shield's Roles resource are hidden from the sidebar (`registerNavigation(false)` for Shield) but their routes stay intact.
 - **Customer Request Portal** — second Filament panel; branded shared login (one-way admin→portal button); customer↔admin conversation thread + gated customer revision loop; portal view page (status halo, info boxes, official response); fully self-hosted fonts (Barlow + Vazirmatn, no CDN on the public surface).
 - **Partner Transactions** — resource + view page + off-resource view + `TransactionsTab` + policy (pattern documented in §6).
 - **Read-only View pages** — dedicated Infolist + `ViewRecord` page + table `ViewAction`, done on: **Suppliers, Customers, Sourcing, Companies, Inquiries, Sales, Invoices**.
@@ -78,7 +79,9 @@ A Persian-language internal corporate management system for running operations a
 - **Portal panel:** a separate Filament panel gated by `is_portal_user` (absolute — no `super_admin` bypass in `canAccessPanel()`), not by a Shield role; both panels render one shared `BrandedLogin` base with panel-aware seams (copy namespace, cross-panel link, default language).
 - **Jalali/Gregorian:** DB stores **Gregorian**, UI displays **Jalali**. Forms: `->jalali()` on DatePickers. Tables: `->jalaliDate()` / `->jalaliDateTime()` on `TextColumn`. Infolists: same macros work on `TextEntry` (from `ariaieboy/filament-jalali`). Display is currently **always Jalali** (not conditional) for table/view consistency.
 - **Inquiries direction/calendar:** `direction` (inbound/outbound) and `calendar` (jalali/gregorian) columns + nullable `company_id` FK; `Company.locale` (`fa`/`en`) is the single source of truth for calendar decisions.
-- **Navigation groups:** business modules under «فروش و تأمین»; `UserResource` + Shield Roles unified under «مدیریت کاربری» (Shield's group set by overriding the `nav.group` key in `lang/vendor/filament-shield/fa/filament-shield.php`).
+- **Navigation groups:** sidebar group order is defined explicitly via `->navigationGroups([...])` in `AdminPanelProvider` — order: «فروش و تأمین»، «امور اداری»، «امور مالی»، «درخواست‌ها». The «مدیریت کاربری» group was removed: its members (`UserResource`, Shield Roles) moved into the Settings page and are hidden from the sidebar.
+- **App version:** single source of truth is `config/comantsys.php` → `'version'` (env-overridable via `APP_VERSION`). Displayed in the sidebar footer (via the `SIDEBAR_FOOTER` render hook) and on the Settings page. UI editing of the version is a future phase.
+- **Sidebar/topbar theming:** custom styling lives in `resources/css/filament/admin/theme.css`. Sidebar width is set at panel level via `->sidebarWidth('16rem')` (not CSS). Active/hover nav items use industrial orange `#E8590C` (active = filled orange + white text; hover = light orange tint). Date capsule + settings cards use explicit rgba values, NOT Filament's `gray` token.
 - **Tax:** per-row `round()` for form/model/PDF consistency.
 - **Soft deletes** removed from Invoice (hard delete with confirmation). **Company delete guard:** `deleting` hook blocks deletion when active invoices exist.
 - **`verify_url_base`** on Company (for QR URLs).
@@ -100,6 +103,10 @@ A Persian-language internal corporate management system for running operations a
 - **Full-width dashboard** needs a custom `App\Filament\Pages\Dashboard` overriding `getMaxContentWidth()`.
 - **Docker volume mount** can come up empty after a restart — fix: `docker compose down && docker compose up -d`.
 - **Custom View page + route-model binding trap:** on a custom Filament Page with a `{record}` route param, Filament may hand `mount()` a fully-resolved **MODEL**, not a raw id. Calling `findOrFail($record)` on that model serialises the whole model into the SQL `where id = ...` clause → PostgreSQL `22P02 invalid input syntax for type bigint`. Fix: normalise first — `$key = $record instanceof Model ? $record->getKey() : $record;` then query by `$key`. **The `mount()` signature must name the model in its union** (`int|string|PartnerTransaction $record`): a scalar-only `int|string` hint does not reject the model — in weak typing mode PHP coerces it via `Model::__toString()` (= `toJson()`), so the body receives the record's entire JSON as its "key" and the `instanceof` check is unreachable. Also: when a partner-facing page resolves a record by id, scope the lookup to `where('user_id', auth()->id())` (super_admin may bypass) so a tampered id 404s instead of leaking another user's row.
+- **Blade parses component tags inside `<style>` CSS comments.** A `<x-...>` tag written inside a `/* ... */` comment in a Blade `<style>` block is still compiled and can break the view with an unclosed-component error. Never put Blade component tags in CSS comments.
+- **Tabler icons are NOT installed** — bespoke Blade views must use `<x-filament::icon :icon="\Filament\Support\Icons\Heroicon::...">`, not `<i class="ti ...">` (which renders empty). No CDN icon fonts (locked no-CDN decision).
+- **Sidebar width** is a PHP property (`HasSidebar::$sidebarWidth`, default `20rem`), NOT a CSS variable you can beat with `:root`. Filament prints `:root { --sidebar-width }` inline AFTER the theme CSS, so override it via `->sidebarWidth()` in the provider, not CSS.
+- **The `Heroicon` enum lives in `filament/support`** (`vendor/filament/support/src/Icons/Heroicon.php`), not `filament/filament`.
 
 ### Record View-page pattern (hero header + stat cards + detail cards)
 
@@ -143,3 +150,5 @@ A Persian-language internal corporate management system for running operations a
 **On the horizon:**
 - AI sourcing agent inside the Inquiries module (swappable `LlmProviderInterface`; Phase 1: Gemini 2.5 Flash + Brave Search + Tesseract OCR).
 - Regular automated prod DB backups.
+- **App version editing** from the Settings page (currently display-only; sourced from `config/comantsys.php`).
+- **Backups directory at deploy time:** `storage/app/backups` is created lazily on first backup; if scheduled backups are added, create the dir (and a `.gitignore`) at deploy time instead.
