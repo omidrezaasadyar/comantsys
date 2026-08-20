@@ -74,6 +74,13 @@ class AdminPanelProvider extends PanelProvider
                 ]),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
+            ->navigationGroups([
+                'فروش و تأمین',
+                'امور اداری',
+                'امور مالی',
+                'درخواست‌ها',
+                'مدیریت کاربری',
+            ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
