@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\File;
 
 class DatabaseBackupService
 {
@@ -26,6 +27,8 @@ class DatabaseBackupService
 
     public function backup(): string
     {
+        File::ensureDirectoryExists($this->backupDir());
+
         $cfg = $this->config();
         $file = $this->backupDir() . '/backup_' . date('Y-m-d_His') . '.dump';
 
