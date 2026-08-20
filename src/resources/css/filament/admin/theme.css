@@ -208,3 +208,57 @@
 .fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-icon {
     color: #ffffff !important;
 }
+
+/* ============================================================
+   COMANTSYS — خط جداکنندهٔ بین آیتم‌های بالا و اولین گروه برچسب‌دار
+   ============================================================ */
+
+/* خط را به همهٔ گروه‌های برچسب‌دار می‌دهیم، سپس از هر گروهِ برچسب‌داری که
+   *پس از* یک گروه برچسب‌دار دیگر می‌آید پس می‌گیریم — پس فقط روی اولی
+   می‌ماند. مستقل از ترتیب، و بی‌نیاز از ساختار آیتم‌های بی‌برچسب. */
+.fi-sidebar-nav-groups > .fi-sidebar-group:has(> .fi-sidebar-group-btn) {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.10);
+}
+.fi-sidebar-nav-groups > .fi-sidebar-group:has(> .fi-sidebar-group-btn) ~ .fi-sidebar-group:has(> .fi-sidebar-group-btn) {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+/* خط جداکننده در تم تیره */
+.dark .fi-sidebar-nav-groups > .fi-sidebar-group:has(> .fi-sidebar-group-btn) {
+    border-top-color: rgba(255, 255, 255, 0.14);
+}
+
+/* ============================================================
+   COMANTSYS — چیپ نسخه در پای سایدبار
+   ============================================================ */
+.fi-sidebar-version {
+    display: flex;
+    justify-content: center;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.fi-sidebar-version-chip {
+    font-size: 0.72rem;
+    font-family: var(--font-mono, monospace);
+    color: rgba(0, 0, 0, 0.45);
+    background-color: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 9999px;
+    padding: 0.2rem 0.7rem;
+    letter-spacing: 0.02em;
+}
+
+/* چیپ نسخه در تم تیره */
+.dark .fi-sidebar-version {
+    border-top-color: rgba(255, 255, 255, 0.10);
+}
+.dark .fi-sidebar-version-chip {
+    color: rgba(255, 255, 255, 0.55);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+}

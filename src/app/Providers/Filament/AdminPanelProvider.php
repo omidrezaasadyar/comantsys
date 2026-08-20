@@ -42,6 +42,10 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('سامانه مدیریت شرکتی')
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('16rem')
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_FOOTER,
+                fn (): string => view('filament.sidebar.version')->render(),
+            )
             ->defaultThemeMode(ThemeMode::Light)
             ->colors([
                 'primary' => Color::Sky,
