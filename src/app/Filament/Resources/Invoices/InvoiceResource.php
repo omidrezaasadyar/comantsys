@@ -42,7 +42,19 @@ class InvoiceResource extends Resource
     protected static ?string $modelLabel = 'فاکتور';
 
     protected static ?string $pluralModelLabel = 'فاکتورها و پیش‌فاکتورها';
-    protected static ?string $recordTitleAttribute = 'name';
+    protected static ?string $recordTitleAttribute = 'invoice_number';
+
+    /**
+     * Global search: the parent returns just [$recordTitleAttribute], which is
+     * why the old 'name' value crashed on invoices.name. Widened to include the
+     * customer, since staff search by who the invoice is for as often as by number.
+     *
+     * @return array<string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['invoice_number', 'customer.name'];
+    }
 
     public static function form(Schema $schema): Schema
     {
