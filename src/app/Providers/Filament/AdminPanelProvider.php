@@ -84,7 +84,6 @@ class AdminPanelProvider extends PanelProvider
                 'امور اداری',
                 'امور مالی',
                 'درخواست‌ها',
-                'مدیریت کاربری',
             ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -107,7 +106,8 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
-                FilamentShieldPlugin::make(),
+                FilamentShieldPlugin::make()
+                    ->registerNavigation(false),
             ])
             ->authMiddleware([
                 Authenticate::class,
