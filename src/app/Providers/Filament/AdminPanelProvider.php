@@ -41,6 +41,7 @@ class AdminPanelProvider extends PanelProvider
             ->defaultAvatarProvider(\App\Filament\AvatarProviders\InitialsAvatarProvider::class)
             ->brandName('سامانه مدیریت شرکتی')
             ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('16rem')
             ->defaultThemeMode(ThemeMode::Light)
             ->colors([
                 'primary' => Color::Sky,

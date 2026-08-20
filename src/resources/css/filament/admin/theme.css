@@ -181,3 +181,30 @@
     padding: 0.6rem !important;
 }
 
+
+/* ============================================================
+   COMANTSYS — عرض سایدبار + رنگ نارنجی صنعتی برای منوی فعال و هاور
+   ============================================================ */
+
+/* رنگ نارنجی صنعتی برند */
+.fi-sidebar {
+    --comantsys-orange: #E8590C;
+}
+
+/* هاور روی آیتم منو — ته‌رنگ روشن نارنجی، متن و آیکون نارنجی */
+.fi-sidebar-item:not(.fi-active) > .fi-sidebar-item-btn:hover {
+    background-color: rgba(232, 89, 12, 0.12) !important;
+}
+.fi-sidebar-item:not(.fi-active) > .fi-sidebar-item-btn:hover .fi-sidebar-item-label,
+.fi-sidebar-item:not(.fi-active) > .fi-sidebar-item-btn:hover .fi-sidebar-item-icon {
+    color: var(--comantsys-orange) !important;
+}
+
+/* آیتم فعال — پس‌زمینهٔ پُر نارنجی، متن و آیکون سفید */
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    background-color: var(--comantsys-orange) !important;
+}
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label,
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-icon {
+    color: #ffffff !important;
+}
