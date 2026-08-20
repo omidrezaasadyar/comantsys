@@ -22,6 +22,8 @@
     .cs-topbar-dates {
         display: inline-flex;
         align-items: stretch;
+        align-self: stretch;
+        box-sizing: border-box;
         white-space: nowrap;
         background: #f6f7f9;
         border: 1px solid rgba(0, 0, 0, 0.08);
@@ -44,7 +46,7 @@
         display: flex;
         align-items: center;
         gap: 7px;
-        padding: 6px 12px;
+        padding: 0 12px;
     }
     .cs-td-label {
         font-size: 10px;
