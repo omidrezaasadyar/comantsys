@@ -55,7 +55,9 @@ A Persian-language internal corporate management system for running operations a
 - **Inquiries (استعلام)** — items Repeater, Jalali datepicker, Persian i18n; per-record `direction` and `calendar` (see §5).
 - **Sourcing (تأمین‌یابی)**, **Customers**, **Companies**.
 - **Access Control (RBAC)** — Filament Shield: roles + permissions + policies enforcing **per-operation** access; `super_admin` role bypasses all checks. **User management** via `UserResource` — create/edit users and assign roles entirely in-panel (no terminal).
-- **Read-only View pages** — dedicated Infolist + `ViewRecord` page + table `ViewAction`, done on: **Suppliers, Customers, Sourcing, Companies, Inquiries**. *(Sales & Invoices pending — see §7.)*
+- **Customer Request Portal** — second Filament panel; branded shared login (one-way admin→portal button); customer↔admin conversation thread + gated customer revision loop; portal view page (status halo, info boxes, official response); fully self-hosted fonts (Barlow + Vazirmatn, no CDN on the public surface).
+- **Partner Transactions** — resource + view page + off-resource view + `TransactionsTab` + policy (pattern documented in §6).
+- **Read-only View pages** — dedicated Infolist + `ViewRecord` page + table `ViewAction`, done on: **Suppliers, Customers, Sourcing, Companies, Inquiries, Sales, Invoices**.
 
 ### Invoices/Proforma PDF spec
 - **Render engine:** Browsershot/Chromium (replaced mPDF). Chromium/Chrome-for-Testing installed permanently in the Dockerfile before `USER appuser`.
@@ -73,6 +75,7 @@ A Persian-language internal corporate management system for running operations a
 - **Multilingual (i18n):** UI labels are translatable and must come through `lang/` via `__()`, never hardcoded. **User-entered data is NOT translated** — stored as written, outside the i18n layer.
 - **Access control model:** **operation-level** (view / create / update / delete), **role-based**, via Filament Shield. Users are assigned roles in-panel. **Permissions and roles live in the DB, not in git** — regenerate/assign separately on each environment.
 - **User model:** implements `FilamentUser`, uses spatie `HasRoles` trait, `canAccessPanel(): bool` returns `true`.
+- **Portal panel:** a separate Filament panel gated by `is_portal_user` (absolute — no `super_admin` bypass in `canAccessPanel()`), not by a Shield role; both panels render one shared `BrandedLogin` base with panel-aware seams (copy namespace, cross-panel link, default language).
 - **Jalali/Gregorian:** DB stores **Gregorian**, UI displays **Jalali**. Forms: `->jalali()` on DatePickers. Tables: `->jalaliDate()` / `->jalaliDateTime()` on `TextColumn`. Infolists: same macros work on `TextEntry` (from `ariaieboy/filament-jalali`). Display is currently **always Jalali** (not conditional) for table/view consistency.
 - **Inquiries direction/calendar:** `direction` (inbound/outbound) and `calendar` (jalali/gregorian) columns + nullable `company_id` FK; `Company.locale` (`fa`/`en`) is the single source of truth for calendar decisions.
 - **Navigation groups:** business modules under «فروش و تأمین»; `UserResource` + Shield Roles unified under «مدیریت کاربری» (Shield's group set by overriding the `nav.group` key in `lang/vendor/filament-shield/fa/filament-shield.php`).
@@ -113,31 +116,25 @@ A Persian-language internal corporate management system for running operations a
 
 > The only section that changes often.
 
-**View pages (finish the pattern):**
-- DONE: Suppliers, Customers, Sourcing, Companies, Inquiries.
-- REMAINING: **Sales, Invoices** — both have Repeaters → use `RepeatableEntry`; money fields need thousands formatting; Sales exchange-rate fields conditional on `currency != IRR`.
+**Customer Request Portal — PROD deploy (back up the prod DB first, do in this order):**
+- Apply the **five** portal migrations **in this order**: `is_portal_user` → `portal_requests` → `attachments` → `messages` → `indexes`. Timestamp order is load-bearing — the attachments/messages FKs need `portal_requests`, the indexes need the messages table.
+- Bake `zz-uploads.ini` into the **prod Dockerfile too** (`upload_max_filesize=6M`, `post_max_size=30M`, `max_file_uploads=20`), then rebuild + restart prod. The prod image is **separate** — rebuilding dev does not cover it. Until this lands PHP rejects oversized uploads before app validation, so the user sees a blank/419 instead of the Persian message.
+- Confirm the reverse proxy (Caddy / xray) routes `/portal` on `portal.eisindustry.com`.
+- `git pull` → regenerate Shield permissions for `PortalRequestResource` → `php artisan optimize:clear` (routes and providers changed).
 
-**Data debt:**
-- Uploaded files (company **logos/stamps**) were not migrated to the server → render empty in the view and the table image column until re-uploaded (Edit form) or restored.
+**Portal — still open:**
+- Admin `PortalRequestResource::getPages()` has **no `'view'`** by design — the edit screen is the review screen. Revisit only if review outgrows the form.
+- **Portal language set undecided:** brief said en/fa/ar, but `lang/ar` doesn't exist yet and an unexplained `lang/de/` is on disk. Decide the target set **and German's fate together** when building the portal locale work — deleting `de` is safe/reversible (git keeps it, re-adding a locale is just a folder), but do it deliberately in that step, not here.
+- Non-`fa` customers should get Gregorian dates, driven by `Company.locale`.
+
+**Security / infra:**
+- **Rotate the database password** — oldest open item, now urgent: exposed in an earlier session, *and* a publicly reachable portal login surface now exists. Its characters also break `parse_ini_file()` on `.env`.
 
 **Prod rollout of RBAC (pending, careful):**
 - Not just `git pull`. Order: backup prod DB → `git pull` → run the Shield migration → generate permissions → assign `super_admin` on prod → `optimize:clear`.
 
-**Security / infra:**
-- **Rotate the database password** — exposed in an earlier session; oldest open item. Now higher priority — see «Customer Request Portal» below; the external login surface makes it urgent.
-
-**Customer Request Portal — open items & PROD deploy:**
-- **PROD deploy — do in this order, back up the prod DB first:**
-  - Apply the three portal migrations on prod **in order**: `is_portal_user` → `portal_requests` → `portal_request_attachments`. Timestamp order is load-bearing — the attachments FK needs `portal_requests` to exist first.
-  - Bake the uploads `.ini` into the **prod Dockerfile too** (`upload_max_filesize=6M`, `post_max_size=30M`, `max_file_uploads=20`), then rebuild + restart the prod container. The prod image is **separate**: rebuilding dev does not cover it. Until this lands, PHP rejects oversized uploads before app validation runs, so the user sees a blank/419 failure instead of the Persian message.
-  - Confirm the reverse proxy (Caddy / xray) routes `/portal` on `portal.eisindustry.com`.
-  - `git pull` on prod → `php artisan optimize:clear` (routes and providers changed).
-- **Security — now higher priority, the portal adds an externally reachable login surface:**
-  - **Rotate the DB password before the portal ships.** Same item as «Security / infra» above, now doubly urgent: exposed in an earlier session, *and* its characters already break `parse_ini_file()` on `.env`.
-- **Still TO BUILD before prod is meaningful:**
-  - **View page** — customer sees the status boxes, the admin response, and their own files.
-  - **Admin-side `PortalRequest` resource** — internal review / approve / respond; Shield-gated; **no owner scope** (operators must see every request, unlike the portal resource).
-  - **Portal UI** — unified branded login matching the admin login (locked decision); tri-lingual en/fa/ar, incl. `lang/ar/portal_requests.php`; Gregorian dates for non-`fa` customers, driven by `Company.locale`.
+**Data debt:**
+- Uploaded files (company **logos/stamps**) were not migrated to the server → render empty in the view and the table image column until re-uploaded (Edit form) or restored.
 
 **Invoices module:**
 - PDF header alignment (national-ID / economic-code boxes vs. barcode).
