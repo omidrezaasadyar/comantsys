@@ -18,6 +18,7 @@ use Filament\Facades\Filament;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Morilog\Jalali\Jalalian;
 
 class Dashboard extends BaseDashboard
@@ -30,8 +31,12 @@ class Dashboard extends BaseDashboard
     }
 
     /**
-     * Authenticated user box (name + avatar initial).
-     * Greeting/labels live in the view via __(); this only carries data.
+     * Authenticated user box: name, avatar initial, and humanized role(s).
+     * Roles come from spatie HasRoles; multiple roles are comma-joined and
+     * each name is humanized (super_admin -> "Super Admin"). Empty when the
+     * user has no role, so the view can hide the line.
+     *
+     * @return array{name:string, initial:string, role:string}
      */
     public function getUserBox(): array
     {
@@ -39,9 +44,17 @@ class Dashboard extends BaseDashboard
         $name = trim((string) ($user?->name ?? ''));
         $initial = mb_strtoupper(mb_substr($name, 0, 1));
 
+        $role = '';
+        if ($user !== null && method_exists($user, 'getRoleNames')) {
+            $role = $user->getRoleNames()
+                ->map(fn (string $r): string => Str::headline($r))
+                ->implode('، '); // Persian comma; fine in both locales
+        }
+
         return [
             'name'    => $name,
             'initial' => $initial !== '' ? $initial : '?',
+            'role'    => $role,
         ];
     }
 

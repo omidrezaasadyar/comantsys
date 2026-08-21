@@ -93,6 +93,9 @@
                 <div>
                     <div class="cs-welcome-hi">{{ __('filament-panels::widgets/account-widget.welcome', ['app' => config('app.name')]) }}</div>
                     <div class="cs-welcome-name">{{ $userBox['name'] }}</div>
+                    @if (($userBox['role'] ?? '') !== '')
+                        <div class="cs-welcome-role">{{ $userBox['role'] }}</div>
+                    @endif
                 </div>
                 <a href="{{ filament()->getLogoutUrl() }}" class="cs-logout"
                    onclick="event.preventDefault();document.getElementById('cs-logout-form').submit();">
@@ -251,6 +254,7 @@
         .cs-avatar{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#3f6eaa,#284a78);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;box-shadow:0 8px 20px rgba(40,74,120,.4);}
         .cs-welcome-hi{font-size:13px;color:#8a97a8;margin-bottom:4px;}
         .cs-welcome-name{font-size:20px;font-weight:800;color:#fff;}
+        .cs-welcome-role{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;color:#f7943e;background:rgba(245,106,28,.12);border:1px solid rgba(245,106,28,.25);padding:2px 9px;border-radius:20px;}
         .cs-logout{margin-inline-start:auto;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;background:rgba(245,106,28,.12);border:1px solid rgba(245,106,28,.28);color:#f7943e;padding:9px 15px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s;}
         .cs-logout:hover{background:rgba(245,106,28,.2);border-color:rgba(245,106,28,.45);}
         .cs-divider-v{width:1px;background:rgba(255,255,255,.09);}
