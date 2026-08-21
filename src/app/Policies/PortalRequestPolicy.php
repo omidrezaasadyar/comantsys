@@ -96,12 +96,17 @@ class PortalRequestPolicy
 
     public function delete(AuthUser $authUser, PortalRequest $portalRequest): bool
     {
-        return $authUser->can('Delete:PortalRequest');
+        // Deliberate deviation from this project's "policy uses ->can()" norm.
+        // Hard-delete is an ABSOLUTE role rule, not a tunable permission: using
+        // hasRole() makes it immune to permission drift (a future
+        // shield:generate or stray grant cannot loosen it). Filament auto-hides
+        // the Delete button for anyone who fails this.
+        return $authUser->hasRole('super_admin');
     }
 
     public function deleteAny(AuthUser $authUser): bool
     {
-        return $authUser->can('DeleteAny:PortalRequest');
+        return $authUser->hasRole('super_admin');
     }
 
     public function restore(AuthUser $authUser, PortalRequest $portalRequest): bool

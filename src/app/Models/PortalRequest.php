@@ -230,5 +230,20 @@ class PortalRequest extends Model
                 $request->saveQuietly();
             }
         });
+
+        /**
+         * Layer 2 — non-UI backstop for hard delete. The policy already hides
+         * the buttons; this catches any authenticated path that bypasses them.
+         * Child rows (messages, attachments) are removed by DB-level
+         * cascadeOnDelete, so this hook only GATES — it deletes nothing itself.
+         */
+        static::deleting(function (PortalRequest $request) {
+            $user = auth()->user();
+            if ($user && ! $user->hasRole('super_admin')) {
+                throw new \App\Exceptions\PortalRequestDeleteForbiddenException();
+            }
+            // null user (console/tinker/queue) => allowed on purpose: shell access
+            // is already root-level trust; this hook guards authenticated web paths.
+        });
     }
 }

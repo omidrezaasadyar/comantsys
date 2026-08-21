@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\PortalRequests\Tables;
 
 use App\Models\PortalRequest;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -74,10 +76,19 @@ class PortalRequestsTable
                     ->options(PortalRequest::requestStatuses()),
             ])
             ->recordActions([
-                // Opens the review screen. No ViewAction (no view page yet) and
-                // no DeleteAction — a customer's submission is not admin litter.
+                // Opens the review screen. No ViewAction (no view page yet).
                 EditAction::make()
                     ->label(__('portal_requests.admin.review')),
+
+                // Hard delete (no SoftDeletes on this model). PortalRequestPolicy
+                // restricts delete/deleteAny to super_admin, and Filament hides
+                // the button for anyone who fails it — no ->visible() needed here.
+                DeleteAction::make()
+                    ->requiresConfirmation(),
+            ])
+            ->toolbarActions([
+                DeleteBulkAction::make()
+                    ->requiresConfirmation(),
             ]);
     }
 }
