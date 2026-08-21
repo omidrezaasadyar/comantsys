@@ -28,3 +28,6 @@ Thumbs.db
 
 # Auto-generated project map (rebuild with: php artisan project:map)
 /PROJECT-MAP.md
+
+# Throwaway backups from editing tools (e.g. Claude Code *.bak)
+*.bak
