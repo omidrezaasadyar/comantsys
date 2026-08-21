@@ -59,6 +59,8 @@ A Persian-language internal corporate management system for running operations a
 - **Customer Request Portal** — second Filament panel; branded shared login (one-way admin→portal button); customer↔admin conversation thread + gated customer revision loop; portal view page (status halo, info boxes, official response); fully self-hosted fonts (Barlow + Vazirmatn, no CDN on the public surface).
 - **Partner Transactions** — resource + view page + off-resource view + `TransactionsTab` + policy (pattern documented in §6).
 - **Read-only View pages** — dedicated Infolist + `ViewRecord` page + table `ViewAction`, done on: **Suppliers, Customers, Sourcing, Companies, Inquiries, Sales, Invoices**.
+- **Dashboard (bespoke)** — custom full-width `Dashboard` page rendering a hand-built Blade view (inline styles + one scoped `<style>`, per §6). Replaces the old `AccountWidget`/`StatsOverviewWidget` (classes still on disk, no longer rendered). KPI counts/quick-action URLs from real resources; received-requests panel wired to `PortalRequest` (list capped at 6 + real total + empty state); welcome/clocks/quick-actions; live locale-aware Jalali date (Persian digits under `fa`, Latin under `en`). Top-bar Shamsi/Gregorian calendar render-hook removed (moved into the dashboard); the `filament.topbar.dates` view file is kept on disk (unused) for easy revert. Labels via `lang/{fa,en}/dashboard.php`.
+- **Live FX rates (tgju)** — `RateProviderInterface` + `TgjuRateProvider` (fetches `call1.tgju.org/ajax.json`, parses `price_dollar_rl`/`price_eur`, Rial→Toman, reads `dp`/`dt` → up/down/flat). Bound in `AppServiceProvider`. `Dashboard::getRates()` serves it through a two-layer cache: `dashboard.rates` (30-min TTL) + `dashboard.rates.last` (forever, last-known-good fallback). `app:refresh-rates` command pre-warms the cache; scheduled every 30 min in `routes/console.php` (inert without a host `schedule:run` cron — dashboard self-refreshes on load regardless).
 
 ### Invoices/Proforma PDF spec
 - **Render engine:** Browsershot/Chromium (replaced mPDF). Chromium/Chrome-for-Testing installed permanently in the Dockerfile before `USER appuser`.
@@ -146,6 +148,14 @@ A Persian-language internal corporate management system for running operations a
 **Invoices module:**
 - PDF header alignment (national-ID / economic-code boxes vs. barcode).
 - English/LTR invoice template for foreign customers.
+
+**Dashboard — debts (logged, not blocking):**
+- KPI trend badges (`▲ ۸.۲٪`, `＋۳ این ماه`) are still **decorative** — no real month-over-month trend logic yet.
+- «کارهای امروز» (today's tasks) is **decorative** — no task model exists (kept by decision).
+- FX rate freshness relies on `Cache::remember` self-refresh; add a host cron running `php artisan schedule:run` every minute in **prod** to keep `app:refresh-rates` warming the cache (otherwise the first visitor after each 30-min expiry waits on one tgju call).
+- Clocks use fixed UTC offsets (London +1, Berlin +2, New York −4) → **DST drift** in winter; switch to `Intl.DateTimeFormat` with IANA zones when convenient.
+- en Jalali long-date is hybrid (`جمعه 30 مرداد 1405` — Latin digits, Persian weekday/month); needs a manual EN weekday/month map if a fully-English line is wanted.
+- Currency unit + digits are locale-aware (`ت`/`T`, Persian/Latin digits); FX `value`/`delta` localized in the view, provider stays Latin/neutral.
 
 **On the horizon:**
 - AI sourcing agent inside the Inquiries module (swappable `LlmProviderInterface`; Phase 1: Gemini 2.5 Flash + Brave Search + Tesseract OCR).
