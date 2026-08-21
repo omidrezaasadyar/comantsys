@@ -23,7 +23,6 @@ use Filament\Enums\ThemeMode;
 use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
-use Morilog\Jalali\Jalalian;
 
 
 
@@ -70,13 +69,6 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): View => view('filament.topbar.tools'),
-            )
-            ->renderHook(
-                PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
-                fn (): View => view('filament.topbar.dates', [
-                    'jalali'    => Jalalian::forge(now())->format('Y/m/d'),
-                    'gregorian' => now()->format('Y/m/d'),
-                ]),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->navigationGroups([

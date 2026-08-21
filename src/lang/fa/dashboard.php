@@ -31,4 +31,21 @@ return [
     'backup_failed' => 'پشتیبان‌گیری ناموفق بود',
     'restore_success' => 'بازیابی با موفقیت انجام شد',
     'restore_failed' => 'بازیابی ناموفق بود',
+
+    // Dashboard view — section titles, quick actions, panels
+    'quick_actions'    => 'میانبرهای عملیات سریع',
+    'received_requests'=> 'درخواست‌های دریافت‌شده',
+    'requests_count'   => ':count مورد',
+    'manage_all_requests' => 'مدیریت همه درخواست‌ها ←',
+    'todays_tasks'     => 'کارهای امروز',
+    'qa_new_invoice'   => 'فاکتور جدید',
+    'qa_proforma'      => 'پیش‌فاکتور',
+    'qa_customer'      => 'ثبت مشتری',
+    'qa_letter'        => 'ثبت نامه',
+    'qa_request'       => 'مدیریت درخواست',
+    'qa_reports'       => 'گزارش‌ها',
+    'currency_usd'     => 'دلار',
+    'currency_eur'     => 'یورو',
+    'requests_empty'   => 'درخواستی ثبت نشده است',
+    'currency_unit'    => 'ت',
 ];
