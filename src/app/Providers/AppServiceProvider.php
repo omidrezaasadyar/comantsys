@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\RateProviderInterface;
+use App\Services\Rates\TgjuRateProvider;
 use Illuminate\Support\ServiceProvider;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 
@@ -12,7 +14,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Swappable rates source — bound to tgju for now, like the sourcing
+        // provider pattern. getRates() resolves this behind a cache layer.
+        $this->app->bind(RateProviderInterface::class, TgjuRateProvider::class);
     }
 
     /**
