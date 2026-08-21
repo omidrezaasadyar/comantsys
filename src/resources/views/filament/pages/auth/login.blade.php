@@ -110,14 +110,15 @@
     // Footer "version updated" date. Source: config('app.updated_at'), which is
     // env-driven (APP_UPDATED_AT) so a deploy step can stamp it. Jalali for the
     // Persian presentation, Gregorian for English.
-    $updatedAt = Carbon::parse(config('app.updated_at'));
+    $updatedAt = \App\Support\AppInfo::updatedAt()
+        ?? \Illuminate\Support\Carbon::parse(config('app.updated_at'));
 
     $updatedLabels = [
         'en' => $updatedAt->format('Y-m-d'),
         'fa' => $faDigits(Jalalian::fromDateTime($updatedAt)->format('Y/m/d')),
     ];
 
-    $version = config('app.version');
+    $version = \App\Support\AppInfo::version();
 
     // Server-rendered first paint for the clocks, so they never flash "--:--".
     // Alpine takes over on boot and keeps them ticking.

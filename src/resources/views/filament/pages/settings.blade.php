@@ -40,10 +40,16 @@
         <div class="cs-set-card cs-set-card-static">
             <div class="cs-set-card-top">
                 <span class="cs-set-icon"><x-filament::icon :icon="Heroicon::OutlinedRectangleStack" /></span>
-                <span class="cs-set-version-chip">{{ config('comantsys.version') }}</span>
+                <span class="cs-set-version-chip">{{ \App\Support\AppInfo::version() }}</span>
             </div>
             <div class="cs-set-title">نسخهٔ نرم‌افزار</div>
-            <div class="cs-set-desc">نمایش نسخهٔ فعلی برنامه. ویرایش در فاز بعد.</div>
+            <div class="cs-set-desc">نسخهٔ فعلی و تاریخ به‌روزرسانی. برای تغییر، ویرایش را بزنید.</div>
+            <button type="button"
+                    wire:click="mountAction('editVersion')"
+                    class="cs-set-edit-btn">
+                <x-filament::icon :icon="Heroicon::OutlinedPencilSquare" />
+                <span>ویرایش</span>
+            </button>
         </div>
 
     </div>
@@ -141,6 +147,37 @@
         }
         .dark .cs-set-backup-actions {
             border-top-color: rgba(255, 255, 255, 0.08);
+        }
+        .cs-set-edit-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #B84503;
+            background: #FBE6D6;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .cs-set-edit-btn:hover {
+            background: #F8D9C2;
+            border-color: #E8590C;
+        }
+        .cs-set-edit-btn svg {
+            width: 15px;
+            height: 15px;
+        }
+        .dark .cs-set-edit-btn {
+            color: #F2843F;
+            background: rgba(232, 89, 12, 0.16);
+        }
+        .dark .cs-set-edit-btn:hover {
+            background: rgba(232, 89, 12, 0.24);
+            border-color: #F2843F;
         }
     </style>
 </x-filament-panels::page>
