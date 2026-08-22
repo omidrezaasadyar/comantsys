@@ -73,6 +73,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->navigationGroups([
                 'فروش و تأمین',
+                'امور روزانه',
                 'امور اداری',
                 'امور مالی',
                 'درخواست‌ها',

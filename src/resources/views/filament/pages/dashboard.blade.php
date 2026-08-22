@@ -231,7 +231,10 @@
                 </div>
                 <div class="cs-scroll">
                     @foreach ($tasks as $t)
-                        <div class="cs-task" style="border-inline-start:3px solid {{ $t['color'] }};">
+                        <div class="cs-task cs-task-clickable"
+                             style="border-inline-start:3px solid {{ $t['color'] }};"
+                             wire:click="mountAction('completeTask', { task: {{ $t['id'] }} })"
+                             wire:key="task-{{ $t['id'] }}">
                             <div class="cs-task-time" style="color:{{ $t['color'] }};">{{ $t['time'] }}</div>
                             <div class="cs-task-title">{{ $t['title'] }}</div>
                             <div class="cs-task-sub">{{ $t['sub'] }}</div>
@@ -323,6 +326,8 @@
         .cs-task-time{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;width:42px;}
         .cs-task-title{flex:1;min-width:0;font-size:13px;color:#e8edf4;font-weight:600;}
         .cs-task-sub{font-size:12px;color:#8a97a8;flex-shrink:0;}
+        .cs-task-clickable{cursor:pointer;transition:background .15s ease,border-color .15s ease;}
+        .cs-task-clickable:hover{background:rgba(255,255,255,.05);}
 
         @media (max-width:1100px){
             .cs-welcome{grid-template-columns:1fr;}
